@@ -31,3 +31,20 @@ long millis( void )
 
         return( (long) (duration * 1000) );
 }
+
+////////////////////////////////////////////////////////////////////////////////
+void randomSeed( long s )
+{
+	srand( s );
+}
+
+long random( long min, long max )
+{
+	long v = (rand() % (max-min)) + min;
+	return v;
+}
+
+long random( long max )
+{
+	return random( 0, max );
+}
