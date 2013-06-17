@@ -9,11 +9,13 @@
 // desktop includes
 #include <iostream>
 #include <sys/time.h>
+#include "eesim.h"
 
 #else
-// arduino includes
-#include <EEPROM.h>  /* NOTE: case sensitive */
 
+// arduino includes
+#include <EEPROM.h>  		// EEProm support
+#include <avr/pgmspace.h>	// PGMspace support for strings
 #endif
 
 
@@ -51,41 +53,7 @@ long millis( void )
 }
 
 
-////////////////////
-// eeprom simulator
-
-#define EE2END	(0x1000)
-unsigned char _ee_[EE2END];
-
-void ee_load( void )
-{
-	FILE * fp = fopen( "eeprom.dat", "r" );
-	if( !fp ) return;
-	fread( _ee_, EE2END, 1, fp );
-	fclose( fp );
-	PRINT( "Loaded EEprom" );
-}
-
-void ee_save( void )
-{
-	FILE * fp = fopen( "eeprom.dat", "w" );
-	if( !fp ) return;
-	fwrite(  _ee_, EE2END, 1, fp );
-	fclose( fp );
-	PRINT( "Saved EEprom" );
-}
-
-
-#define EE_READ( A ) 		( _ee_[ (A) % EE2END ] )
-#define EE_WRITE( A, V ) \
-	{ \
-		_ee_[ (A) % EE2END ] = (V); \
-		ee_save(); \
-	}
-
 #else
-#define EE_READ( A )		( EEPROM.read( A ))
-#define EE_WRITE( A, V ) 	( EEPROM.write( (A), (V) ))
 
 #define PRINT( A ) 		Serial.print( A )
 #define PRINTLN( A ) 		Serial.println( A )
@@ -101,7 +69,6 @@ void setup()
 #ifdef DESKTOP
 	// set up millis
 	millis_start();
-	ee_load();
 #else
 	// set up serial port
 	Serial.begin( 9600 );
@@ -111,19 +78,6 @@ void setup()
 #endif
 
 	PRINTLN( "BLuB Initialization:" );
-	long eesize = EE2END+1;
-	PRINT( eesize );
-	PRINTLN( " EEProm bytes available." );
-
-	for( int i=0 ; i<10 ; i++ ) {
-		PRINT( EE_READ( i ) );
-		PRINT( ", " );
-	}
-	PRINTLN( "." );
-
-	for( int i=0 ; i<10 ; i++ ) {
-		EE_WRITE( i, i );
-	}
 } 
 
 
@@ -136,7 +90,4 @@ void loop()
 	delay( 239 );
 	PRINT( "Time so far: " );
 	PRINTLN( millis() );
-#ifdef DESKTOP
-	ee_save();
-#endif
 }

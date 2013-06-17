@@ -8,7 +8,6 @@ extern void loop( void );
 
 int main( int argc, char ** argv )
 {
-	std::cout << "BLuB Starting up..." << std::endl;
 	setup();
 
 	while( 1 ) {

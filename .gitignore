@@ -1,3 +1,4 @@
+
 # Compiled Object files
 *.slo
 *.lo
@@ -16,3 +17,5 @@
 blub
 blub.exe
 eeprom.dat
+
+*.swp
