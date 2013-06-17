@@ -25,8 +25,8 @@ all: $(TARGA)
 	@$(CXX) $(CFLAGS) $(DEFS) $(INCS) -c -o $@ $<
 
 %.cpp: %.ino
-	@echo INO -> CPP
-	@ln $<  $@
+	@echo link INO to CPP
+	@ln $< $@
 
 $(TARGA): $(OBJSA) 
 	@echo Link $@
@@ -36,7 +36,7 @@ $(TARGA): $(OBJSA)
 
 clean:
 	@echo Remove build files
-	-rm -f $(OBJSA) $(TARGA) $(TARGA).exe
+	-rm -f $(OBJSA) $(TARGA) $(TARGA).exe src/BLuB.cpp
 .PHONY: clean
 
 test: $(TARGA)
