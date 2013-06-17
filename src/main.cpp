@@ -9,7 +9,7 @@ extern void loop( void );
 int main( int argc, char ** argv )
 {
 	std::cout << "BLuB Starting up..." << std::endl;
-	setup()
+	setup();
 
 	while( 1 ) {
 		loop();

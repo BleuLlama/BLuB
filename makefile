@@ -2,19 +2,18 @@
 #
 TARGA := blub
 
-SRCSAI := src/BLuB.ino
-SRCSAC := src/main.cpp 
+SRCSA := src/main.cpp \
+	  src/BLuB.cpp
 
 INCS += -Isrc -Icontrib
 
-OBJSAC := $(SRCSAC:%.cpp=%.o)
-OBJSAI := $(SRCSAI:%.ino=%.o)
+OBJSA := $(SRCSA:%.cpp=%.o)
 
-CFLAGS += -g
+CFLAGS += -g -DDESKTOP
 
 xx += -Wall -pedantic
 
-LDFLAGS += 
+LDFLAGS +=
 LIBS += 
 
 ################################################################################
@@ -25,11 +24,11 @@ all: $(TARGA)
 	@echo $(CXX) $<
 	@$(CXX) $(CFLAGS) $(DEFS) $(INCS) -c -o $@ $<
 
-%.o: %.ino
-	@echo $(CXX) $<
-	@$(CXX) $(CFLAGS) $(DEFS) $(INCS) -c -o $@ $<
+%.cpp: %.ino
+	@echo INO -> CPP
+	@ln $<  $@
 
-$(TARGA): $(OBJSAC) $(OBJSAI)
+$(TARGA): $(OBJSA) 
 	@echo Link $@
 	@$(CXX) $(CFLAGS) $(OBJSA) $(LDFLAGS) $(LIBS) -o $@
 
@@ -37,7 +36,7 @@ $(TARGA): $(OBJSAC) $(OBJSAI)
 
 clean:
 	@echo Remove build files
-	-rm -f $(OBJSAC) $(OBJSAI) $(TARGA) $(TARGA).exe
+	-rm -f $(OBJSA) $(TARGA) $(TARGA).exe
 .PHONY: clean
 
 test: $(TARGA)
