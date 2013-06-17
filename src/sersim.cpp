@@ -55,14 +55,49 @@ int sersim::peek( void )
 
 void sersim::print( long v, int fmt ) // BIN, OCT, DEC, HEX
 {
+	char buf[ 128 ];
+	int p=0;
+
+	switch( fmt ) {
+	case( BIN ):
+		int bit;
+		for( bit = 0x80 ; bit>0 ; bit>>=1 );
+		{
+			buf[p] = (v&bit)?'1':'0';
+			p++;
+		}
+		buf[p] = '\0';
+		break;
+
+	case( OCT ):
+		snprintf( buf, 128, "%lo", v );
+		break;
+
+	case( HEX ):
+		snprintf( buf, 128, "%02lx", v );
+		break;
+
+	case( DEC ):
+	default:
+		snprintf( buf, 128, "%ld", v );
+		break;
+	}
+
+	std::cout << buf << std::flush;
 }
 
 void sersim::print( double v, int prec ) // bits of precision after decimal point
 {
+	char buf[128];
+	char fmt[128];
+	snprintf( fmt, 128, "%%0.%df", prec );
+	snprintf( buf, 128, fmt, v );
+	std::cout << buf << std::flush;
 }
 
 void sersim::print( std::string v )
 {
+	std::cout << v << std::flush;
 }
 
 void sersim::println( long v, int fmt ) // BIN, OCT, DEC, HEX
@@ -85,14 +120,26 @@ void sersim::println( std::string v )
 
 void sersim::write( long v )
 {
+	unsigned char buf[ 3 ];
+	buf[0] = (unsigned char) (v & 0x00ff);
+	buf[1] = '\0';
+	std::cout << buf << std::flush;
 }
 
 void sersim::write( std::string v )
 {
+	std::cout << v << std::flush;
 }
 
 void sersim::write( char * v, long len )
 {
+	if( !v ) return;
+
+	for( int a=0 ; a<len ; a++ )
+	{
+		std::cout << v[a];
+	}
+	std::cout << std::flush;
 }
 
 void sersim::flush( void )
