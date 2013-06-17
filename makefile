@@ -4,6 +4,8 @@ TARGA := blub
 
 SRCSA := src/main.cpp \
 	 src/eesim.cpp \
+	 src/sersim.cpp \
+	 src/miscsim.cpp \
 	 src/BLuB.cpp
 
 INCS += -Isrc -Icontrib

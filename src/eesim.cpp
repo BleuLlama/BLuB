@@ -24,6 +24,7 @@ eeprom_simulator::eeprom_simulator( std::string filename, long size )
 
 eeprom_simulator::~eeprom_simulator( void )
 {
+	if( this->memory ) free( this->memory );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
