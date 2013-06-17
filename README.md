@@ -40,6 +40,7 @@ The operations are a mix between BASIC and a sort-of Assembler
 There are 26 variables, indicated by lowercase letters.
 Operators are uppercase letters.
 
+
 Operations:
 	Opcode	Name	operands	Description
 	N	noop	-		do nothing
@@ -62,3 +63,43 @@ Operations:
 	X	AWrite	V0 V1		AnalogWrite( pin V0 from V1 )
 	R	Read	V0 V1		DigitalRead( pin V0 into V1 )
 	S	ARead	V0 V1		AnalogRead( pin V0 into V1 )
+
+
+	10 A = DigitalRead( 3 )
+	20 B = AnalogRead( 3 )
+	30 C = A * 255 / 1024
+	40 Print "c is "; c
+	50 AnalogWrite( 11, C )
+	60 AnalogWrite( 10, 200 )
+
+	Tokenized basicish
+
+	10 REM Program to do example stuff
+	20 DRa'3
+ 	30 ARb'3
+	40 M*CA'255
+	50 M/C'1024
+	60 ??"c is "
+	70 ??c
+	80 ??"\n"
+	90 AW'11c
+	100 AW'10'200
+
+	opcodes are 2 characters
+	110 IGb'100'40
+	120 GO'20
+	
+
+	parameters (letters in the description) can be:
+		lowercase letter (variable name)
+		immediate value 
+
+	immediate values start with a single quote "'", and go 
+	until the next non-numeric digit.  0..9
+	Values are integer
+
+	IG	if A greater than B, goto C
+
+	IF Greater A B, goto C
+
+	math operations start with 'M'.
