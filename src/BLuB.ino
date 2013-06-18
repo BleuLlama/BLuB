@@ -75,7 +75,7 @@ void cmd_help( void )
 	Serial.println( "Available commands:" );
 	//                   ------- ------- ------- ------- -------
 	Serial.println( "    help    mem     new" );
-	Serial.println( "    elist   eload   esave   eformat" );
+	Serial.println( "    elist   eload   esave   enew" );
 	//                   ------- ------- ------- ------- -------
 }
 
@@ -125,16 +125,16 @@ void getSerialLine( char * buf, int maxbuf, boolean echoback )
 
 
 
-void cmd_eformat( void )
+void cmd_enew( void )
 {
-  Serial.print( "Formatting EEPROM..." );
+  Serial.print( "Formatting EEPROM " );
   for( int i=0 ; i<kEESize ; i++ )
   {
     EEPROM.write( i, 0x00 );
 //    digitalWrite( kLED, i & 0x020 );
     if( i%64 == 0 ) Serial.print( "." );
   }
-  Serial.println( "...DONE!" );
+  Serial.println( " Done." );
 }
 
 void cmd_elist( void )
@@ -210,9 +210,11 @@ void loop()
 
 	// process it
 	if( !strcmp( linebuf, "mem" )) { cmd_mem(); }
+
 	else if( !strcmp( linebuf, "new" )) { cmd_new(); }
 	else if( !strcmp( linebuf, "list" )) { cmd_list(); }
-	else if( !strcmp( linebuf, "eformat" )) { cmd_eformat(); }
+
+	else if( !strcmp( linebuf, "enew" )) { cmd_enew(); }
 	else if( !strcmp( linebuf, "elist" )) { cmd_elist(); }
 	else if( !strcmp( linebuf, "eload" )) { cmd_eload(); }
 	else if( !strcmp( linebuf, "esave" )) { cmd_esave(); }
