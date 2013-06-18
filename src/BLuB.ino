@@ -26,18 +26,19 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 #define kRamSize (E2END + 1 )
+#define kEESize  (E2END + 1 )
 
 char programRam[ kRamSize ];
 
 
-int ramFree = E2END;
-int eeFree = E2END+1;
+int ramFree = 0;
+int eeFree = 0;
 
 
 void cmd_mem( void )
 {
 	ramFree = strlen( (const char *)programRam );
-	ramFree = kRamSize - ramFree;
+	ramFree = kRamSize - ramFree -1;
 
 	Serial.print( "    " );
 	Serial.print( (long)ramFree, DEC );
@@ -45,24 +46,22 @@ void cmd_mem( void )
 	Serial.print( (long)kRamSize, DEC );
 	Serial.println( " bytes free RAM" );
 
-
-
 	// recompute eeFree
 	int ch = 'X';
 
 	// figure out how much is used
-	for( eeFree=0 ; (eeFree<=E2END) && (ch != '\0') ; eeFree++ )
+	for( eeFree=0 ; (eeFree<=kEESize) && (ch != '\0') ; eeFree++ )
 	{
 		ch = EEPROM.read( eeFree );
 		if( ch == '\0' ) continue;
 	}
-	eeFree = E2END+1 - eeFree; // turn it into free.
+	eeFree = kEESize - eeFree; // turn it into free.
 
 
 	Serial.print( "    " );
 	Serial.print( (long)eeFree, DEC );
 	Serial.print( " of " );
-	Serial.print( (long)E2END+1, DEC );
+	Serial.print( (long)kEESize, DEC );
 	Serial.println( " bytes free EEProm" );
 }
 
@@ -75,7 +74,7 @@ void cmd_help( void )
 	Serial.println( "" );
 	Serial.println( "Available commands:" );
 	//                   ------- ------- ------- ------- -------
-	Serial.println( "    help    mem" );
+	Serial.println( "    help    mem     new" );
 	Serial.println( "    elist   eload   esave   eformat" );
 	//                   ------- ------- ------- ------- -------
 }
@@ -125,13 +124,11 @@ void getSerialLine( char * buf, int maxbuf, boolean echoback )
 }
 
 
-#define kLineLen (32)
-char linebuf[kLineLen];
 
 void cmd_eformat( void )
 {
   Serial.print( "Formatting EEPROM..." );
-  for( int i=0 ; i<=E2END ; i++ )
+  for( int i=0 ; i<kEESize ; i++ )
   {
     EEPROM.write( i, 0x00 );
 //    digitalWrite( kLED, i & 0x020 );
@@ -142,25 +139,66 @@ void cmd_eformat( void )
 
 void cmd_elist( void )
 {
-  int ch = 'X';
+	int ch = 'X';
 
-  for( int i=0 ; (i<=E2END) && (ch != '\0') ; i++ )
-  {
-    ch = EEPROM.read( i );
+	for( int i=0 ; (i<kEESize) && (ch != '\0') ; i++ )
+	{
+		ch = EEPROM.read( i );
 
-    if( ch == '\0' ) continue;
-    Serial.write( (char *) &ch, 1 );
-  }
+		if( ch == '\0' ) continue;
+		Serial.write( (char *) &ch, 1 );
+	}
 }
 
 void cmd_eload( void )
 {
+	int i;
+	int ch = 'X';
+
+	for( i=0 ; (i<kEESize) && (ch != '\0') ; i++ )
+	{
+		ch = EEPROM.read( i );
+
+		programRam[i] = ch;
+		if( ch == '\0' ) continue;
+	}
+
+	Serial.print( (long)i, DEC );
+	Serial.println( " bytes loaded." );
 }
 
 void cmd_esave( void )
 {
+	int i;
+	int ch = 'X';
+
+	for( i=0 ; (i<kEESize) && (ch != '\0') ; i++ )
+	{
+		ch = programRam[i];
+		EEPROM.write( i, ch );
+
+		if( ch == '\0' ) continue;
+	}
+
+	Serial.print( (long)i, DEC );
+	Serial.println( " bytes saved." );
 }
 
+void cmd_new( void )
+{
+	for( int i=0 ; i<kRamSize ; i++ )
+	{
+		programRam[ i ] = '\0';
+	}
+}
+
+void cmd_list( void )
+{
+	Serial.println( programRam );
+}
+
+#define kLineLen (32)
+char linebuf[kLineLen];
 
 void loop()
 {
@@ -172,10 +210,15 @@ void loop()
 
 	// process it
 	if( !strcmp( linebuf, "mem" )) { cmd_mem(); }
+	else if( !strcmp( linebuf, "new" )) { cmd_new(); }
+	else if( !strcmp( linebuf, "list" )) { cmd_list(); }
 	else if( !strcmp( linebuf, "eformat" )) { cmd_eformat(); }
 	else if( !strcmp( linebuf, "elist" )) { cmd_elist(); }
 	else if( !strcmp( linebuf, "eload" )) { cmd_eload(); }
 	else if( !strcmp( linebuf, "esave" )) { cmd_esave(); }
+	else if( linebuf[0] >= '0' && linebuf[0] <= '9' ) {
+		Serial.println( "Consume Line To Ram" );
+	}
 	else if( linebuf[0] != '\0' ){
 		Serial.println( "Huh?" );
 	}
