@@ -18,11 +18,11 @@
 
 
 #ifndef FLASHEND
-#define FLASHEND 0
+#define FLASHEND (0x0fff)
 #endif
 
 #ifndef RAMEND
-#define RAMEND 0
+#define RAMEND (0x0fff)
 #endif
 
 #ifndef boolean

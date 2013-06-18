@@ -8,10 +8,11 @@ SRCSA := src/main.cpp \
 	 src/miscsim.cpp \
 	 src/iosim.cpp \
 	\
-	 src/EEExplorer.cpp
+	 src/BLuB.cpp
 
 OTHER := \
-	 src/BLuB.cpp
+	 src/EEExplorer.cpp \
+	src/TinyBasicPlus.cpp
 
 INCS += -Isrc -Icontrib
 
