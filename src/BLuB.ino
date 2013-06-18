@@ -28,8 +28,10 @@
 #define kRamSize (E2END + 1 )
 #define kEESize  (E2END + 1 )
 
-char programRam[ kRamSize ];
+#define kNVariables (26)
 
+char programRam[ kRamSize ];
+int variables[ kNVariables ];
 
 int ramFree = 0;
 int eeFree = 0;
@@ -74,26 +76,13 @@ void cmd_help( void )
 	Serial.println( "" );
 	Serial.println( "Available commands:" );
 	//                   ------- ------- ------- ------- -------
-	Serial.println( "    help    mem     new" );
+	Serial.println( "    help    mem     new     list    run" );
 	Serial.println( "    elist   eload   esave   enew" );
 	//                   ------- ------- ------- ------- -------
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void setup()
-{
-	// set up serial port
-	Serial.begin( 9600 );
-	while( !Serial ) {
-		; // wait for Leonardo to catch up
-	}
-
-	Serial.println( "BLuB Interface" );
-	Serial.println( kBLuBVersion );
-	cmd_mem();
-} 
-
 
 
 // getSerialLine
@@ -127,14 +116,14 @@ void getSerialLine( char * buf, int maxbuf, boolean echoback )
 
 void cmd_enew( void )
 {
-  Serial.print( "Formatting EEPROM " );
-  for( int i=0 ; i<kEESize ; i++ )
-  {
-    EEPROM.write( i, 0x00 );
-//    digitalWrite( kLED, i & 0x020 );
-    if( i%64 == 0 ) Serial.print( "." );
-  }
-  Serial.println( " Done." );
+	Serial.print( "Formatting EEPROM " );
+	for( int i=0 ; i<kEESize ; i++ )
+	{
+		EEPROM.write( i, 0x00 );
+		//    digitalWrite( kLED, i & 0x020 );
+		if( i%64 == 0 ) Serial.print( "." );
+	}
+	Serial.println( " Done." );
 }
 
 void cmd_elist( void )
@@ -184,18 +173,64 @@ void cmd_esave( void )
 	Serial.println( " bytes saved." );
 }
 
+#define VarCharToIndex( A )\
+		( (A) - 'A' )
+
+void init_vars( void )
+{
+	for( int i=0 ; i<kNVariables ; i++ )
+	{
+		variables[i] = 0;
+	}
+
+	// (T)rue
+	variables[ VarCharToIndex( 'T' ) ] = 0xff;
+
+	// (H)alf
+	variables[ VarCharToIndex( 'H' ) ] = 0x80;
+
+	// (F)alse, (Z)ero
+	variables[ VarCharToIndex( 'F' ) ] = 0x00;
+	variables[ VarCharToIndex( 'Z' ) ] = 0x00;
+}
+
 void cmd_new( void )
 {
 	for( int i=0 ; i<kRamSize ; i++ )
 	{
 		programRam[ i ] = '\0';
 	}
+	init_vars();
+
 }
 
 void cmd_list( void )
 {
 	Serial.println( programRam );
 }
+
+void cmd_run( void )
+{
+	Serial.println( "Not yet." );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void setup()
+{
+	// set up serial port
+	Serial.begin( 9600 );
+	while( !Serial ) {
+		; // wait for Leonardo to catch up
+	}
+
+	Serial.println( "BLuB Interface" );
+	Serial.println( kBLuBVersion );
+	cmd_new();
+	init_vars();
+	cmd_mem();
+} 
+
 
 #define kLineLen (32)
 char linebuf[kLineLen];
@@ -218,6 +253,9 @@ void loop()
 	else if( !strcmp( linebuf, "elist" )) { cmd_elist(); }
 	else if( !strcmp( linebuf, "eload" )) { cmd_eload(); }
 	else if( !strcmp( linebuf, "esave" )) { cmd_esave(); }
+
+	else if( !strcmp( linebuf, "run" )) { cmd_run(); }
+
 	else if( linebuf[0] >= '0' && linebuf[0] <= '9' ) {
 		Serial.println( "Consume Line To Ram" );
 	}
