@@ -61,7 +61,7 @@ void sersim::print( long v, int fmt ) // BIN, OCT, DEC, HEX
 	switch( fmt ) {
 	case( BIN ):
 		int bit;
-		for( bit = 0x80 ; bit>0 ; bit>>=1 );
+		for( bit = 0x80 ; bit>0 ; bit>>=1 )
 		{
 			buf[p] = (v&bit)?'1':'0';
 			p++;

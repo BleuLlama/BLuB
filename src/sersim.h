@@ -2,6 +2,7 @@
 //
 // 	simulate the Serial library in Arduinosville
 
+#include <iostream>
 
 class sersim {
 private:

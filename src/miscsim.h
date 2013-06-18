@@ -1,6 +1,4 @@
 
-#include <limits.h>
-
 // Time functions
 
 void delay( long v );

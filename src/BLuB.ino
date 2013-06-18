@@ -6,12 +6,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef DESKTOP
-// desktop includes
-#include <iostream>
-#include <sys/time.h>
-#include "eesim.h"
-#include "sersim.h"
-#include "miscsim.h"
+#include "ardsim.h"		// all of the arduino simulation libraries
 
 #else
 
