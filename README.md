@@ -30,7 +30,39 @@ persistance between power cycles.
 The micro interface for this is serial, and the desktop interface
 is a line based text input.
 
-	ADDR (BYTE) OPERATION (BYTE) [ Optional Operands ]
+	(Line Number) (Opcode) (Optional Operands)
+
+	Line number is an immediate numerical digit.
+	Opcode is two uppercase letters
+	Operands are lowercase letters for variables
+	Operands are digits for immediate numbers
+	Operands of multiple digits can be separated with a comma
+	Operands of string type start with a double quote to another dquote 
+
+10 REM fibonacci sequence
+20 LET a = 1
+30 LET b = 1
+35 FOR z = 0 TO 20
+40 LET c = a + b
+45 PRINT a ; " " ;
+50 LET a = b
+60 LET b = c
+70 NEXT z
+
+	Example (Fib.blb)
+	10LDa1			; LET a = 1
+	20 LD b 2		; LET b = 1
+	30 LD g 0		; LET g = 0
+	40 M+ c a b		; LET c = a + b
+	40 M+cab		; LET  c = a + b
+	50 ??a			; PRINT A;
+	60 ??" "		; PRINT " ";
+	70 LD ab		; LET a = b
+	80 LD bc		; LET b = c
+	90 MI g			; LET g = g + 1
+	90 M+ g g 1		; LET g = g + 1
+	100 JL g 20 40		; Jump if g is less than 20 to 40
+	
 
 Addresses are added sequentially.  Insert/renumbering will be an
 option in the future.
@@ -38,7 +70,6 @@ option in the future.
 The operations are a mix between BASIC and a sort-of Assembler
 
 There are 26 variables, indicated by lowercase letters.
-Operators are uppercase letters.
 
 
 Operations:

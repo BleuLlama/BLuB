@@ -174,7 +174,7 @@ void cmd_esave( void )
 }
 
 #define VarCharToIndex( A )\
-		( (A) - 'A' )
+		( (A) - 'a' )
 
 void init_vars( void )
 {
@@ -184,14 +184,14 @@ void init_vars( void )
 	}
 
 	// (T)rue
-	variables[ VarCharToIndex( 'T' ) ] = 0xff;
+	variables[ VarCharToIndex( 't' ) ] = 0xff;
 
 	// (H)alf
-	variables[ VarCharToIndex( 'H' ) ] = 0x80;
+	variables[ VarCharToIndex( 'h' ) ] = 0x80;
 
 	// (F)alse, (Z)ero
-	variables[ VarCharToIndex( 'F' ) ] = 0x00;
-	variables[ VarCharToIndex( 'Z' ) ] = 0x00;
+	variables[ VarCharToIndex( 'f' ) ] = 0x00;
+	variables[ VarCharToIndex( 'z' ) ] = 0x00;
 }
 
 void cmd_new( void )
