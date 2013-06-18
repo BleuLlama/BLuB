@@ -6,6 +6,8 @@
 #include <iostream>
 #include "sersim.h"
 
+////////////////////////////////////////////////////////////////////////////////
+
 sersim::sersim( void )
 {
 }
@@ -20,30 +22,56 @@ bool sersim::operator!( void )
 	return false;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
 
 void sersim::begin( long speed, long config )
 {
-	std::cout << "Begin Serial" << std::endl;
 }
 
 
 void sersim::end( void )
 {
-	std::cout << "Close Serial" << std::endl;
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 int sersim::available( void )
 {
-	 // returns number of bytes to read
-	return 0;
+	 // should return the number of bytes to read
+
+	return 1;
+
+/*
+	struct timeval tv;
+	fd_set fds;
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+	FD_ZERO(&fds);
+	FD_SET(STDIN_FILENO, &fds);
+	select(STDIN_FILENO+1, &fds, NULL, NULL, &tv);
+	return (FD_ISSET(0, &fds));
+*/
 }
 
 int sersim::peek( void )
 {
-	return 0;
+	// Don't know how to implement this
+	int ch = getc( stdin );
+	if( ch != EOF )
+	ungetc( ch, stdin );
+	return ch;
 }
 
+
+int sersim::read( void )
+{
+	int ch = getc( stdin );
+	return ch;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef BIN 
 #define BIN	(1)
@@ -145,11 +173,6 @@ void sersim::write( char * v, long len )
 void sersim::flush( void )
 {
 	std::cout << std::flush;
-}
-
-int sersim::read( void )
-{
-	return 0;
 }
 
 sersim Serial;

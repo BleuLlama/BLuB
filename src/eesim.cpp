@@ -62,4 +62,4 @@ void eeprom_simulator::write( long addr, unsigned char value )
 }
 
 
-eeprom_simulator EEPROM( "eeprom.dat", (EE2END+1) );
+eeprom_simulator EEPROM( "eeprom.dat", (E2END+1) );

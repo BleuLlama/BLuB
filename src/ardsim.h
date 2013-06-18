@@ -14,3 +14,17 @@
 
 // Serial IO
 #include "sersim.h"
+
+
+
+#ifndef FLASHEND
+#define FLASHEND 0
+#endif
+
+#ifndef RAMEND
+#define RAMEND 0
+#endif
+
+#ifndef boolean
+typedef bool boolean;
+#endif

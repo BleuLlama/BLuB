@@ -7,7 +7,7 @@
 #include <iostream>
 
 // simulated size of eeprom
-#define EE2END	(0x0fff)
+#define E2END	(0x0fff)
 
 
 class eeprom_simulator {
