@@ -7,9 +7,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 //
+// v0.01  2013-June-19  Line entry, line editing
+//			cmds: help, mem, new, list
+//			      EEPROM: elist, eload, esave, enew
+//
 // v0.00  2013-June-18  Initial test versions
 
-#define kBLuBVersion	"v0.00  2013-June-18  yorgle@gmail.com"
+#define kBLuBVersion	"v0.01  2013-June-19  yorgle@gmail.com"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -207,7 +211,9 @@ void cmd_new( void )
 
 void cmd_list( void )
 {
-	Serial.println( programRam );
+	Serial.println( "" );		// newline before
+	Serial.print( programRam );	// dump it all out
+	// no need for println, since program ram ends with newline
 }
 
 void cmd_run( void )
@@ -235,6 +241,7 @@ void setup()
 #define kBufLen (16)
 char buffer[16];
 
+
 int latoi( char * buf )
 {
 	int v = 0;
@@ -260,6 +267,7 @@ int latoi( char * buf )
 	}
 	return v;
 }
+
 
 void cmd_removeLine( int lineNo, bool verbose )
 {
@@ -308,6 +316,60 @@ void cmd_insertLine( char * theLine )
 		return;
 	}
 
+	// find the appropriate location to insert it
+
+	int lineNo = latoi( theLine );
+
+	char *bufc = programRam;
+	char *bufn = 0;
+
+	while( *bufc ) {
+		// if we're looking at '\0', error line not found, return
+	    	if( *bufc == '\0' ) break;
+
+		// check the current pointer for the matching line
+		int cline = latoi( bufc );
+
+		// find the end point
+		bufn = bufc;
+		while( *bufn != '\0' && *bufn != '\n' ) bufn++;
+
+		// if it matches, 
+		if( cline > lineNo )
+		{
+			// shove the current data out to the end.
+			int moveSz = strlen( bufc ) +1;
+			char * srcpos = bufc + moveSz;
+			char * dstpos = bufc + newSz + moveSz +1;
+
+			do {
+				*dstpos = *srcpos;
+				srcpos--;
+				dstpos--;
+			} while( srcpos != bufc );
+			*dstpos = *srcpos; // copy over the last one...
+
+			// and insert the new content
+			dstpos = bufc;
+			srcpos = theLine;
+
+			while( *srcpos != '\0' ) {
+				*dstpos = *srcpos;
+				dstpos++;
+				srcpos++;
+			}
+			*dstpos = '\n';
+
+			return;
+		}
+
+		// if not, move looking pointer to next line
+		bufc = bufn;
+		bufc++; // move past the newline
+	}
+	// shove the content out the length of the new string
+	// copy the data in
+
 	// append it on the end for now
 	strcat( programRam, theLine );
 	strcat( programRam, "\n" );	// new line
@@ -333,6 +395,7 @@ void loop()
 
 	else if( !strcmp( linebuf, "new" )) { cmd_new(); }
 	else if( !strcmp( linebuf, "list" )) { cmd_list(); }
+	else if( !strcmp( linebuf, "help" )) { cmd_help(); }
 
 	else if( !strcmp( linebuf, "enew" )) { cmd_enew(); }
 	else if( !strcmp( linebuf, "elist" )) { cmd_elist(); }
