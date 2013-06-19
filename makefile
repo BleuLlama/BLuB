@@ -52,7 +52,7 @@ all: $(TARG)
 
 
 %.cpp: %.ino
-	@echo link INO to CPP
+	@echo use INO as CPP
 	@ln $< $@
 
 
