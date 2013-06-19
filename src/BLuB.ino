@@ -40,7 +40,8 @@ int eeFree = 0;
 void cmd_mem( void )
 {
 	ramFree = strlen( (const char *)programRam );
-	ramFree = kRamSize - ramFree -1;
+	ramFree +=1;
+	ramFree = kRamSize - ramFree;
 
 	Serial.print( "    " );
 	Serial.print( (long)ramFree, DEC );
@@ -153,7 +154,7 @@ void cmd_eload( void )
 	}
 
 	Serial.print( (long)i, DEC );
-	Serial.println( " bytes loaded." );
+	Serial.println( " bytes loaded from EEPROM." );
 }
 
 void cmd_esave( void )
@@ -170,7 +171,7 @@ void cmd_esave( void )
 	}
 
 	Serial.print( (long)i, DEC );
-	Serial.println( " bytes saved." );
+	Serial.println( " bytes saved to EEPROM." );
 }
 
 #define VarCharToIndex( A )\
@@ -231,9 +232,93 @@ void setup()
 	cmd_mem();
 } 
 
+#define kBufLen (16)
+char buffer[16];
 
-#define kLineLen (32)
+int latoi( char * buf )
+{
+	int v = 0;
+	// find the integer starting at buf[0]
+	while( *buf <= '9' && *buf >= '0' && v<kBufLen  ) {
+		buffer[v++] = *buf;
+		*buf++;
+	}
+	if( v == 0 ) {
+		// no number!
+		return -1;
+	}
+
+	buffer[v] = '\0';
+
+	// my atoi (save on library overhead)
+	v = 0;
+	buf = buffer;
+	while( *buf ) {
+		v *= 10;
+		v += (*buf)-'0';
+		buf++;
+	}
+	return v;
+}
+
+void cmd_removeLine( int lineNo, bool verbose )
+{
+	char *bufc = programRam;
+	char *bufn = 0;
+
+	while( *bufc ) {
+		// if we're looking at '\0', error line not found, return
+	    	if( *bufc == '\0' ) break;
+
+		// check the current pointer for the matching line
+		int cline = latoi( bufc );
+
+		// find the end point
+		bufn = bufc;
+		while( *bufn != '\0' && *bufn != '\n' ) bufn++;
+
+		// if it matches, 
+		if( cline == lineNo )
+		{
+		    	// scootch endpoint to end of ram down to cpos
+			memcpy( bufc, bufn+1, strlen( bufn ) );
+			return;
+		}
+
+		// if not, move looking pointer to next line
+		bufc = bufn;
+		bufc++; // move past the newline
+	}
+
+	if( verbose )
+		Serial.print( "Error: Line not found." );
+}
+
+void cmd_insertLine( char * theLine )
+{
+	// for now, we'll just shove it into the end of program ram
+	// char programRam[ kRamSize ];
+
+	long pgmSz = strlen( programRam );
+	long newSz = strlen( theLine );
+
+	if( (pgmSz + newSz) >= kRamSize )
+	{
+		Serial.println( "Out of memory!" );
+		return;
+	}
+
+	// append it on the end for now
+	strcat( programRam, theLine );
+	strcat( programRam, "\n" );	// new line
+
+	// parsing happens at runtime. You can store whatever.
+}
+
+
+#define kLineLen (80)
 char linebuf[kLineLen];
+char * bptr;
 
 void loop()
 {
@@ -257,11 +342,41 @@ void loop()
 	else if( !strcmp( linebuf, "run" )) { cmd_run(); }
 
 	else if( linebuf[0] >= '0' && linebuf[0] <= '9' ) {
-		Serial.println( "Consume Line To Ram" );
+		bptr = linebuf;
+
+		// get the line number
+		int v = latoi( bptr );
+		if( v < 0 || v > 999999 ) {
+			Serial.println( "Line Number out of range." );
+			goto cleanup;
+		}
+
+		// skip the number and whitespace, to see if we're just 
+		// entering the line, or there's more to it.
+
+		// skip number
+		while(     (*bptr) >= '0'
+			&& (*bptr) <= '9'
+			&& (*bptr) != '\0' ) bptr++;
+
+		// skip whitespace
+		while( (   (*bptr) == ' '
+			|| (*bptr) == '\t'
+			|| (*bptr) == ','
+		       ) && (*bptr) != '\0' ) bptr++;
+			
+		if( *bptr == '\0' ) {
+			cmd_removeLine( v, true );	// just remove it
+		} else {
+			cmd_removeLine( v, false );	// remove it first
+			cmd_insertLine( linebuf );
+		}
+
 	}
 	else if( linebuf[0] != '\0' ){
 		Serial.println( "Huh?" );
 	}
 
+cleanup:
 	Serial.println( "" );
 }
