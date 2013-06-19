@@ -96,7 +96,7 @@ Line Operations
     System
 	NP			Do nothing
 	ST			Stop
-	RM			remark (comment) to end of line
+	RE			remark (comment) to end of line
 
     Text
 	PP  (P)			print parameter

@@ -6,6 +6,11 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
+
+#define kBLuBVersion	"v0.02  2013-June-19  yorgle@gmail.com"
+
+// v0.02  2013-June-19  New prompt (Smiley)
+//			ops:	NP RE ST
 //
 // v0.01  2013-June-19  Line entry, line editing
 //			cmds: 	help, mem, new, list
@@ -14,7 +19,6 @@
 //
 // v0.00  2013-June-18  Initial test versions
 
-#define kBLuBVersion	"v0.01  2013-June-19  yorgle@gmail.com"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -294,8 +298,33 @@ char * findLine( int line )
 	return bufc;
 }
 
-#define kJRNextLine (-2)
-#define kJRFirstLine (-1)
+#define kJRStop		(-3)
+#define kJRNextLine	(-2)
+#define kJRFirstLine	(-1)
+
+int evaluate_line( char * line )
+{
+	int len = 0;
+	char * buf = line;
+
+	if( !line ) return kJRStop;
+
+	// make sure there's an opcode
+	while( *buf != '\0' && *buf != '\n' ) { len++; buf++; }
+	if( len < 2 ) return kJRStop;
+
+#define OpcodeIs( A, B )\
+	(line[0] == (A) && line[1] == (B) )
+
+	// the do-nothing ops
+	if( OpcodeIs( 'N', 'P' )) return kJRNextLine;
+	if( OpcodeIs( 'R', 'E' )) return kJRNextLine;
+
+	// stop.
+	if( OpcodeIs( 'S', 'T' )) return kJRStop;
+
+	return kJRNextLine;
+}
 
 void cmd_run( void )
 {
@@ -305,7 +334,7 @@ void cmd_run( void )
 
 	if( *bufc == '\0' ) return;
 
-	while( *bufc ) {
+	while( *bufc && next != kJRStop ) {
 		// determine the next line number
 		if( next == kJRFirstLine ) {
 			// starting, use the first one.
@@ -337,13 +366,10 @@ void cmd_run( void )
 		// work on the line here
 		char * ln = bufc;
 
-
 		SKIP_NUMBER( ln );
 		SKIP_WHITESPACE( ln );
 
-		// next two bytes of ln are the 
-
-		cline = latoi( bufc );
+		// trace output
 		if( trace ) {
 			Serial.print( "Line: " );
 			char * tc = bufc;
@@ -353,10 +379,15 @@ void cmd_run( void )
 			}
 			Serial.println( "" );
 
+
 			// get user input (return)
 			while( !Serial.available() );
 			(void) Serial.read();
 		}
+
+		// do the thing!
+		cline = latoi( bufc );
+		next = evaluate_line( ln );
 	}
 
 	Serial.print( "Stopped at line " );
@@ -499,7 +530,7 @@ char * bptr;
 void loop()
 {
 	// print out something
-	Serial.print( "> " );
+	Serial.print( ":) " );
 	
 	// get a line of input
 	getSerialLine( linebuf, kLineLen, false );
