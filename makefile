@@ -1,56 +1,78 @@
-# Makefile for msf-dump
+# Makefile for blub (or other arduino code for desktop)
 #
-TARGA := blub
+#  2013-June  Scott Lawrence  yorgle@gmail.com
+#
 
-SRCSA := src/main.cpp \
-	 src/eesim.cpp \
-	 src/sersim.cpp \
-	 src/miscsim.cpp \
-	 src/iosim.cpp \
-	\
-	 src/BLuB.cpp
+# Main target
+
+TARG := blub
+
+SRCS := src/BLuB.cpp
 
 OTHER := \
 	 src/EEExplorer.cpp \
 	src/TinyBasicPlus.cpp
 
-INCS += -Isrc -Icontrib
+INCS += -Isrc
 
-OBJSA := $(SRCSA:%.cpp=%.o)
 
-CFLAGS += -g -DDESKTOP
+########################################
+# arduino simulator for desktop
 
-xx += -Wall -pedantic
+SRCSIM := ardsim/main.cpp \
+	  ardsim/eesim.cpp \
+	  ardsim/sersim.cpp \
+	  ardsim/miscsim.cpp \
+	  ardsim/iosim.cpp 
+
+INCS += -Iardsim
+	
+
+########################################
+# build settings and such
+
+OBJS := $(SRCS:%.cpp=%.o) $(SRCSIM:%.cpp=%.o)
+
+CFLAGS += -g -DDESKTOP -Wall -pedantic
 
 LDFLAGS +=
+
 LIBS += 
 
-################################################################################
 
-all: $(TARGA)
+################################################################################
+# main build rules
+
+all: $(TARG)
+
 
 %.o: %.cpp
 	@echo $(CXX) $<
 	@$(CXX) $(CFLAGS) $(DEFS) $(INCS) -c -o $@ $<
 
+
 %.cpp: %.ino
 	@echo link INO to CPP
 	@ln $< $@
 
-$(TARGA): $(OBJSA) 
+
+$(TARG): $(OBJS) 
 	@echo Link $@
-	@$(CXX) $(CFLAGS) $(OBJSA) $(LDFLAGS) $(LIBS) -o $@
+	@$(CXX) $(CFLAGS) $(OBJS) $(LDFLAGS) $(LIBS) -o $@
+
 
 ################################################################################
 
 clean:
 	@echo Remove build files
-	-rm -f $(OBJSA) $(TARGA) $(TARGA).exe src/BLuB.cpp
+	-rm -f $(OBJS) $(TARG) $(TARG).exe src/BLuB.cpp
 .PHONY: clean
 
-test: $(TARGA)
-	./$(TARGA)
+
+test: $(TARG)
+	./$(TARG)
 .PHONY: testa
+
 
 full: clean
 	make test
