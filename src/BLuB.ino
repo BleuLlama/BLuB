@@ -73,6 +73,17 @@ int latoi( char * buf )
 	}
 	return v;
 }
+		
+#define SKIP_NUMBER( A ) \
+	while(     (*A) >= '0' \
+		&& (*A) <= '9' \
+		&& (*A) != '\0' ) A++;
+
+#define SKIP_WHITESPACE( A ) \
+	while( (   (*A) == ' ' \
+		|| (*A) == '\t' \
+		|| (*A) == ',' \
+	        ) && (*A) != '\0' ) A++;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -283,21 +294,24 @@ char * findLine( int line )
 	return bufc;
 }
 
+#define kJRNextLine (-2)
+#define kJRFirstLine (-1)
+
 void cmd_run( void )
 {
 	int cline = 0;
-	int next = -1;
+	int next = kJRFirstLine;
 	char *bufc = programRam;
 
 	if( *bufc == '\0' ) return;
 
 	while( *bufc ) {
 		// determine the next line number
-		if( next == -1 ) {
+		if( next == kJRFirstLine ) {
 			// starting, use the first one.
 			bufc = programRam;
 
-		} else if( next == -2 ) {
+		} else if( next == kJRNextLine ) {
 			// use the next one.
 			while( *bufc != '\0' && *bufc != '\n' ) bufc++;
 			bufc++;
@@ -313,12 +327,21 @@ void cmd_run( void )
 			}
 		}
 
-		next = -2; // set for next line
+		next = kJRNextLine; // set for next line
 
 		if( *bufc == '\0' ) {
 			// just in case.
 			break;
 		}
+
+		// work on the line here
+		char * ln = bufc;
+
+
+		SKIP_NUMBER( ln );
+		SKIP_WHITESPACE( ln );
+
+		// next two bytes of ln are the 
 
 		cline = latoi( bufc );
 		if( trace ) {
@@ -498,6 +521,7 @@ void loop()
 	else if( !strcmp( linebuf, "run" )) { cmd_run(); }
 
 	else if( linebuf[0] >= '0' && linebuf[0] <= '9' ) {
+		// it's starting with a number
 		bptr = linebuf;
 
 		// get the line number
@@ -510,16 +534,8 @@ void loop()
 		// skip the number and whitespace, to see if we're just 
 		// entering the line, or there's more to it.
 
-		// skip number
-		while(     (*bptr) >= '0'
-			&& (*bptr) <= '9'
-			&& (*bptr) != '\0' ) bptr++;
-
-		// skip whitespace
-		while( (   (*bptr) == ' '
-			|| (*bptr) == '\t'
-			|| (*bptr) == ','
-		       ) && (*bptr) != '\0' ) bptr++;
+		SKIP_NUMBER( bptr );
+		SKIP_WHITESPACE( bptr );
 			
 		if( *bptr == '\0' ) {
 			cmd_removeLine( v, true );	// just remove it

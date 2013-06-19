@@ -64,73 +64,82 @@ is a line based text input.
 	100 JL g 20 40		; Jump if g is less than 20 to 40
 	
 
-Addresses are added sequentially.  Insert/renumbering will be an
-option in the future.
-
 The operations are a mix between BASIC and a sort-of Assembler
 
 There are 26 variables, indicated by lowercase letters.
+Some varialbes are preset with values at the beginning of runtime.
+These are the only ones guaranteed to be set.
+	t = 255
+	f = 0
+	z = 0
+	h = 128
+
+Commands:
+	mem	display amount of free space in RAM and EEPROM
+	help	display a list of commands and version information
+
+	new 	clear program memory, initialize variables
+	list	display the program loaded into memory
+
+	run	run the program in memory
+	tron	turn program runtime trace on
+	troff	turn program runtime trace off
+
+	enew	clear EEPROM
+	elist	display the program stored in EEPROM
+	eload	load the program from EEPROM to memory
+	esave	save the program from memory to EEPROM
 
 
-Operations:
-	Opcode	Name	operands	Description
-	N	noop	-		do nothing
-	A	add	V0 V1 V2	V0 = V1 + V2
-	S	sub	V0 V1 V2	V0 = V1 - V2
-	M	mult	V0 V1 V2	V0 = V1 * V2
-	D 	divide	V0 V1 V2	V0 = V1 / V2
-	E	equals	V0 V1		V0 = V1
-	I	inc	V0		V0 = V0 + 1
-	D	dec	V0		V0 = V0 - 1
-	J	jump	V0		Jump to address V0
-	DJNE	djnz	V0 V1		Jump to address V0 if V1 is not zero
-	Is	Set	V0 (val)	Set V0 with immediate value
 
-	?	Print	V0		Print the value in V0 (decimal)
-	? 	Print   "TXT"		Print out the text
-	? 	Print   N		Print out a newline
+Line Operations
+    System
+	NP			Do nothing
+	ST			Stop
+	RM			remark (comment) to end of line
 
-	W	Write	V0 V1		DigitalWrite( pin V0 from V1 )
-	X	AWrite	V0 V1		AnalogWrite( pin V0 from V1 )
-	R	Read	V0 V1		DigitalRead( pin V0 into V1 )
-	S	ARead	V0 V1		AnalogRead( pin V0 into V1 )
+    Text
+	PP  (P)			print parameter
 
+    Variable
+	LD  (D) (P)		D = P
 
-	10 A = DigitalRead( 3 )
-	20 B = AnalogRead( 3 )
-	30 C = A * 255 / 1024
-	40 Print "c is "; c
-	50 AnalogWrite( 11, C )
-	60 AnalogWrite( 10, 200 )
+	LR  (D) (P)		D = ram[ P ]
+	LE  (D) (P)		D = EEPROM[ P ]
+	SR  (D) (P)		ram[ P ] = D
+	SE  (D) (P)		EEPROM[ P ] = D
 
-	Tokenized basicish
+    Math
+	M+  (D) (P) (Q)		D = P + Q
+	M-  (D) (P) (Q)		D = P - Q
+	M/  (D) (P) (Q)		D = P / Q
+	M*  (D) (P) (Q)		D = P * Q
 
-	10 REM Program to do example stuff
-	20 DRa'3
- 	30 ARb'3
-	40 M*CA'255
-	50 M/C'1024
-	60 ??"c is "
-	70 ??c
-	80 ??"\n"
-	90 AW'11c
-	100 AW'10'200
+	MI  (D)			D = D + 1
+	MD  (D)			D = D - 1
 
-	opcodes are 2 characters
-	110 IGb'100'40
-	120 GO'20
+    Bitwise operations
+	M<  (D)	(P)		D = D << P  (left shift)
+	M>  (D)	(P)		D = D >> P  (right shift)
+	M&  (D) (P)		D = D & P   (bit mask)
+	M|  (D) (P)		D = D | P   (bit set)
+	M!  (D)			D = ~D      (invert bits)
 	
+    Jumps
+	JR  (D)			goto D
+	JL  (D) (P) (Q)		goto D if P < Q
+	JG  (D) (P) (Q)		goto D if P > Q
+	JE  (D) (P) (Q)		goto D if P == Q
 
-	parameters (letters in the description) can be:
-		lowercase letter (variable name)
-		immediate value 
+	GS  (D)			gosub D
+	GL  (D) (P) (Q)		gosub D if P < Q
+	GG  (D) (P) (Q)		gosub D if P > Q
+	GE  (D) (P) (Q)		gosub D if P == Q
+	RT			return from subroutine
 
-	immediate values start with a single quote "'", and go 
-	until the next non-numeric digit.  0..9
-	Values are integer
+    Digital IO
+	AW  (D) (V)		analog write to Destination pin, value V
+	DW  (D) (V)		digital write to Destination pin, value V
+	AR  (D) (P)		analog read to D the value of pin P
+	DR  (D) (P)		digital read to D the value of pin P
 
-	IG	if A greater than B, goto C
-
-	IF Greater A B, goto C
-
-	math operations start with 'M'.
