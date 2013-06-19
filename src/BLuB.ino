@@ -8,8 +8,9 @@
 // Version history
 //
 // v0.01  2013-June-19  Line entry, line editing
-//			cmds: help, mem, new, list
-//			      EEPROM: elist, eload, esave, enew
+//			cmds: 	help, mem, new, list
+//			      	EEPROM: elist, eload, esave, enew
+//				run, tron, troff
 //
 // v0.00  2013-June-18  Initial test versions
 
@@ -40,6 +41,40 @@ int variables[ kNVariables ];
 int ramFree = 0;
 int eeFree = 0;
 
+bool trace = false;
+
+////////////////////////////////////////////////////////////////////////////////
+
+#define kBufLen (16)
+char buffer[kBufLen];
+
+int latoi( char * buf )
+{
+	int v = 0;
+	// find the integer starting at buf[0]
+	while( *buf <= '9' && *buf >= '0' && v<kBufLen  ) {
+		buffer[v++] = *buf;
+		*buf++;
+	}
+	if( v == 0 ) {
+		// no number!
+		return -1;
+	}
+
+	buffer[v] = '\0';
+
+	// my atoi (save on library overhead)
+	v = 0;
+	buf = buffer;
+	while( *buf ) {
+		v *= 10;
+		v += (*buf)-'0';
+		buf++;
+	}
+	return v;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 void cmd_mem( void )
 {
@@ -81,7 +116,8 @@ void cmd_help( void )
 	Serial.println( "" );
 	Serial.println( "Available commands:" );
 	//                   ------- ------- ------- ------- -------
-	Serial.println( "    help    mem     new     list    run" );
+	Serial.println( "    help    mem     new     list" );
+	Serial.println( "    run     tron    troff" );
 	Serial.println( "    elist   eload   esave   enew" );
 	//                   ------- ------- ------- ------- -------
 }
@@ -216,9 +252,92 @@ void cmd_list( void )
 	// no need for println, since program ram ends with newline
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+void cmd_tron( void )
+{
+	trace = true;
+	Serial.println( "Trace on." );
+}
+
+void cmd_troff( void )
+{
+	trace = false;
+	Serial.println( "Trace off." );
+}
+
+char * findLine( int line )
+{
+	char *bufc = programRam;
+	int cline = latoi( bufc );
+
+	while( cline != line && *bufc != '\0' ) {
+		// skip to next line
+		while( *bufc != '\0' && *bufc != '\n' ) bufc++;
+		// fill cline
+		bufc++;
+		cline = latoi( bufc );
+	}
+
+	return bufc;
+}
+
 void cmd_run( void )
 {
-	Serial.println( "Not yet." );
+	int cline = 0;
+	int next = -1;
+	char *bufc = programRam;
+
+	if( *bufc == '\0' ) return;
+
+	while( *bufc ) {
+		// determine the next line number
+		if( next == -1 ) {
+			// starting, use the first one.
+			bufc = programRam;
+
+		} else if( next == -2 ) {
+			// use the next one.
+			while( *bufc != '\0' && *bufc != '\n' ) bufc++;
+			bufc++;
+
+		} else {
+			// next contains the next line to execute
+			// find the line
+			bufc = findLine( next );
+			if( *bufc == '\0' ) {
+				Serial.print( (long) next, DEC );
+				Serial.println( ": Line not found." );
+				break;
+			}
+		}
+
+		next = -2; // set for next line
+
+		if( *bufc == '\0' ) {
+			// just in case.
+			break;
+		}
+
+		cline = latoi( bufc );
+		if( trace ) {
+			Serial.print( "Line: " );
+			char * tc = bufc;
+			while( (*tc) != '\0' && (*tc) != '\n' ) {
+				Serial.write( tc, 1 );
+				tc++;
+			}
+			Serial.println( "" );
+
+			// get user input (return)
+			while( !Serial.available() );
+			(void) Serial.read();
+		}
+	}
+
+	Serial.print( "Stopped at line " );
+	Serial.println( (long)cline, DEC );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -238,35 +357,7 @@ void setup()
 	cmd_mem();
 } 
 
-#define kBufLen (16)
-char buffer[16];
 
-
-int latoi( char * buf )
-{
-	int v = 0;
-	// find the integer starting at buf[0]
-	while( *buf <= '9' && *buf >= '0' && v<kBufLen  ) {
-		buffer[v++] = *buf;
-		*buf++;
-	}
-	if( v == 0 ) {
-		// no number!
-		return -1;
-	}
-
-	buffer[v] = '\0';
-
-	// my atoi (save on library overhead)
-	v = 0;
-	buf = buffer;
-	while( *buf ) {
-		v *= 10;
-		v += (*buf)-'0';
-		buf++;
-	}
-	return v;
-}
 
 
 void cmd_removeLine( int lineNo, bool verbose )
@@ -402,6 +493,8 @@ void loop()
 	else if( !strcmp( linebuf, "eload" )) { cmd_eload(); }
 	else if( !strcmp( linebuf, "esave" )) { cmd_esave(); }
 
+	else if( !strcmp( linebuf, "tron" )) { cmd_tron(); }
+	else if( !strcmp( linebuf, "troff" )) { cmd_troff(); }
 	else if( !strcmp( linebuf, "run" )) { cmd_run(); }
 
 	else if( linebuf[0] >= '0' && linebuf[0] <= '9' ) {
