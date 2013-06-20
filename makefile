@@ -7,7 +7,7 @@
 
 TARG := blub
 
-SRCS := src/BLuB.cpp
+SRCS := Arduino/BLuB/BLuB.cpp
 
 OTHER := \
 	 src/EEExplorer.cpp \

@@ -156,7 +156,7 @@ void getSerialLine( char * buf, int maxbuf, boolean echoback )
   // read a line or so into our buffer
   do {
     buf[chp] = Serial.read();
-    if( echoback ) Serial.write( buf[chp]);
+    if( echoback ) Serial.write( buf[chp] );
     chp++;
   } while(    Serial.available()
            && buf[chp-1] != '\n'
@@ -194,7 +194,7 @@ void cmd_elist( void )
 		ch = EEPROM.read( i );
 
 		if( ch == '\0' ) continue;
-		Serial.write( (char *) &ch, 1 );
+		Serial.write( (const uint8_t *) &ch, 1 );
 	}
 }
 
@@ -391,7 +391,7 @@ int evaluate_line( char * line )
 			line++;
 			
 			while( *line != '"' ) {
-				Serial.write( line, 1 );
+				Serial.write( (const uint8_t *)line, 1 );
 				line++;
 			}
 		} else {
@@ -514,7 +514,7 @@ void cmd_run( void )
 			Serial.print( "Line: " );
 			char * tc = bufc;
 			while( (*tc) != '\0' && (*tc) != '\n' ) {
-				Serial.write( tc, 1 );
+				Serial.write( (const uint8_t*)tc, 1 );
 				tc++;
 			}
 			Serial.println( "" );
