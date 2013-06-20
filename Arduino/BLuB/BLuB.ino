@@ -288,17 +288,6 @@ void cmd_list( void )
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void cmd_tron( void )
-{
-	trace = true;
-	Serial.println( "Trace on." );
-}
-
-void cmd_troff( void )
-{
-	trace = false;
-	Serial.println( "Trace off." );
-}
 
 char * findLine( int line )
 {
@@ -321,7 +310,6 @@ char * findLine( int line )
 #define kJRNextLine	(-2)
 #define kJRFirstLine	(-1)
 
-#define OpcodeIs( A, B )	 (line[0] == (A) && line[1] == (B) )
 
 // parameters can be:
 //	a-z 	variable source or destination
@@ -350,7 +338,9 @@ int getValue( char * line )
 	return -9999;
 }
 
-#define isVarName( L ) ( (L)>='a' && (L)<='z' )
+#define OpcodeIs( A, B )	(op0 == (A) && op1 == (B) )
+
+#define isVarName( L )		( (L)>='a' && (L)<='z' )
 
 int evaluate_line( char * line )
 {
@@ -359,29 +349,35 @@ int evaluate_line( char * line )
 	char varname;
 	int value;
 
+	char op0, op1;
+
 	if( !line ) return kJRStop;
 
 	// make sure there's an opcode
 	while( *buf != '\0' && *buf != '\n' ) { len++; buf++; }
 	if( len < 2 ) return kJRStop;
 
+	// store the opcode, and increment past it.
+	op0 = *line++;
+	op1 = *line++;
+
+	// skip any pre-pended whitespace
+	SKIP_WHITESPACE( line );
+
 	// the do-nothing ops
 	if( OpcodeIs( 'N', 'P' )) return kJRNextLine;
 	if( OpcodeIs( 'R', 'E' )) return kJRNextLine;
 
+
 	// stop.
 	if( OpcodeIs( 'S', 'T' )) return kJRStop;
 
+
 	// io
-	// PP print
+	// PP print (Special case of the interpreter)
 	if(    OpcodeIs( 'P', 'P' )
 	    || OpcodeIs( 'P', 'L' ) ) {
-		char newline = 0;
-		if( line[1] == 'L' ) newline=1;
 
-		line += 2; //advance past opcode
-
-		SKIP_WHITESPACE( line );
 		if( *line == '\0' || *line == '\n' ) {
 			// nothing.
 			// this lets people do PL for newlines
@@ -398,17 +394,16 @@ int evaluate_line( char * line )
 			value = getValue( line );
 			Serial.print( (long) value, DEC );
 		}
-		if( newline ) {
+		if( op1 == 'L' ) {
 			Serial.println( "" );
 		}
 
 		return kJRNextLine;
 	}
 
+
 	// LD set var
 	if( OpcodeIs( 'L', 'D' )) {
-		line += 2;	// advance past opcode
-		SKIP_WHITESPACE( line );
 		if( !isVarName( *line )) {
 			return kJRSyntaxError;
 		}
@@ -442,9 +437,7 @@ int evaluate_line( char * line )
 		return kJRNextLine;
 	}
 	if( OpcodeIs( 'M', 'I' )) {
-		line += 2;	// advance past opcode
 		// param 1
-		SKIP_WHITESPACE( line );
 		if( !isVarName( *line )) {
 			return kJRSyntaxError;
 		}
@@ -455,9 +448,7 @@ int evaluate_line( char * line )
 		return kJRNextLine;
 	}
 	if( OpcodeIs( 'M', 'D' )) {
-		line += 2;	// advance past opcode
 		// param 1
-		SKIP_WHITESPACE( line );
 		if( !isVarName( *line )) {
 			return kJRSyntaxError;
 		}
@@ -725,8 +716,14 @@ void loop()
 	else if( !strcmp( linebuf, "eload" )) { cmd_eload(); }
 	else if( !strcmp( linebuf, "esave" )) { cmd_esave(); }
 
-	else if( !strcmp( linebuf, "tron" )) { cmd_tron(); }
-	else if( !strcmp( linebuf, "troff" )) { cmd_troff(); }
+	else if( !strcmp( linebuf, "tron" )) { 
+		Serial.println( "Trace on." );
+		trace = true;
+	}
+	else if( !strcmp( linebuf, "troff" )) {
+		Serial.println( "Trace off." );
+		trace = false;
+	}
 	else if( !strcmp( linebuf, "run" )) { cmd_run(); }
 
 	else if( linebuf[0] >= '0' && linebuf[0] <= '9' ) {
