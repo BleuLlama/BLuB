@@ -39,6 +39,9 @@ public:
 	void write( long v );
 	void write( std::string v );
 	void write( char * v, long len );
+	void write( const uint8_t * v, long len ) {
+		this->write( (char *)v, len );
+	}
 
 	void flush( void );
 	
