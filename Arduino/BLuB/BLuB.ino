@@ -80,6 +80,36 @@ int latoi( char * buf )
 	}
 	return v;
 }
+
+
+// same as the above, but it affects the line pointer
+int latoiv( char ** buf, int * next )
+{
+	int v = 0;
+
+	// find the integer starting at buf[0]
+	while( **buf <= '9' && **buf >= '0' && v<kBufLen  ) {
+		buffer[v++] = **buf;
+		*buf++;
+	}
+	if( v == 0 ) {
+		// no number!
+		return 0;
+	}
+
+	buffer[v] = '\0';
+
+	// my atoi (save on library overhead)
+	v = 0;
+	char * b2 = buffer;
+	while( *b2 ) {
+		v *= 10;
+		v += (*b2)-'0';
+		b2++;
+	}
+	return v;
+}
+
 		
 #define SKIP_NUMBER( A ) \
 	while(     (*A) >= '0' \
@@ -338,16 +368,74 @@ int getValue( char * line )
 	return -9999;
 }
 
+
 #define OpcodeIs( A, B )	(op0 == (A) && op1 == (B) )
 
 #define isVarName( L )		( (L)>='a' && (L)<='z' )
+
+void storeVariable( int identifier, int data, int next )
+{
+	printf( "Store %d in variable %c\n", data, (char) identifier );
+
+	if( next == kJRSyntaxError ) return;
+	variables[VarCharToIndex( identifier )] = data;
+}
+
+
+char getDestVarname( char ** line, int * next )
+{
+	if( !line || !next ) return '0';
+
+	if( !isVarName( **line )) {
+		*next = kJRSyntaxError;
+		return '0';
+	}
+
+	// increment past it for the next calls
+	(*line)++;
+
+	return **(line-1);
+}
+
+int getParamValue( char ** line, int * next )
+{
+	if( !line || !next ) return 9999;
+	if( *next == kJRSyntaxError ) return 8888;
+
+	SKIP_WHITESPACE( *line );
+
+	// check for variable
+	if( **line >= 'a' && **line <= 'z' ){
+printf( "Param value is variable: %c\n", **line );
+		// it's a variable. Dereference it.
+		(*line)++;
+printf( "                         %c\n", **line );
+		return variables[VarCharToIndex( *((*line)-1) )];
+	}
+
+
+	// check for number
+	if( **line >= '0' && **line <= '9' ) {
+printf( "Param value is digit\n" );
+		return latoiv( line, next );
+	}
+	
+printf( "Param value is error\n" );
+	// error!
+	*next = kJRSyntaxError;
+	return 0;
+}
+
 
 int evaluate_line( char * line )
 {
 	int len = 0;
 	char * buf = line;
-	char varname;
-	int value;
+	char varname = 0;
+	int valueA = 0;
+	int valueB = 0;
+	int valueC = 0;
+	int next = kJRNextLine;
 
 	char op0, op1;
 
@@ -391,8 +479,8 @@ int evaluate_line( char * line )
 				line++;
 			}
 		} else {
-			value = getValue( line );
-			Serial.print( (long) value, DEC );
+			valueA = getValue( line );
+			Serial.print( (long) valueA, DEC );
 		}
 		if( op1 == 'L' ) {
 			Serial.println( "" );
@@ -404,6 +492,20 @@ int evaluate_line( char * line )
 
 	// LD set var
 	if( OpcodeIs( 'L', 'D' )) {
+		varname = getDestVarname( &line, &next );
+		printf( "destvarname is %c\n", varname );
+
+		valueA = getParamValue( &line, &next );
+		printf( "Value A is %d\n", valueA );
+
+		valueB = getParamValue( &line, &next );
+		printf( "Value B is %d\n", valueB );
+
+		storeVariable( varname, valueA, next );
+		return next;
+	}
+/*
+
 		if( !isVarName( *line )) {
 			return kJRSyntaxError;
 		}
@@ -412,9 +514,9 @@ int evaluate_line( char * line )
 		line += 1;
 
 		variables[VarCharToIndex( varname )] = getValue( line );
-
-		return kJRNextLine;
+		return next;
 	}
+*/
 
 
 	// LR/LE/SR/SE load/Save from RAM/EEprom
