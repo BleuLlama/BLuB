@@ -429,12 +429,44 @@ int evaluate_line( char * line )
 	if( OpcodeIs( 'S', 'E' )) return kJRNextLine;
 
 	// math + - / * ++ --
-	if( OpcodeIs( 'M', '+' )) return kJRNextLine;
-	if( OpcodeIs( 'M', '-' )) return kJRNextLine;
-	if( OpcodeIs( 'M', '/' )) return kJRNextLine;
-	if( OpcodeIs( 'M', '*' )) return kJRNextLine;
-	if( OpcodeIs( 'M', 'I' )) return kJRNextLine;
-	if( OpcodeIs( 'M', 'D' )) return kJRNextLine;
+	if( OpcodeIs( 'M', '+' )) {
+		return kJRNextLine;
+	}
+	if( OpcodeIs( 'M', '-' )) {
+		return kJRNextLine;
+	}
+	if( OpcodeIs( 'M', '/' )) {
+		return kJRNextLine;
+	}
+	if( OpcodeIs( 'M', '*' )) {
+		return kJRNextLine;
+	}
+	if( OpcodeIs( 'M', 'I' )) {
+		line += 2;	// advance past opcode
+		// param 1
+		SKIP_WHITESPACE( line );
+		if( !isVarName( *line )) {
+			return kJRSyntaxError;
+		}
+		varname = *line;
+		line += 1; // skip past the varname
+
+		variables[VarCharToIndex( varname )]++;
+		return kJRNextLine;
+	}
+	if( OpcodeIs( 'M', 'D' )) {
+		line += 2;	// advance past opcode
+		// param 1
+		SKIP_WHITESPACE( line );
+		if( !isVarName( *line )) {
+			return kJRSyntaxError;
+		}
+		varname = *line;
+		line += 1; // skip past the varname
+
+		variables[VarCharToIndex( varname )]--;
+		return kJRNextLine;
+	}
 
 	// bitwise << >> & | !
 	if( OpcodeIs( 'M', '<' )) return kJRNextLine;
