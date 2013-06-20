@@ -55,8 +55,8 @@ is a line based text input.
 	30 LD g 0		; LET g = 0
 	40 M+ c a b		; LET c = a + b
 	40 M+cab		; LET  c = a + b
-	50 ??a			; PRINT A;
-	60 ??" "		; PRINT " ";
+	50 PLa			; PRINT A
+	60 PL" "		; PRINT " "
 	70 LD ab		; LET a = b
 	80 LD bc		; LET b = c
 	90 MI g			; LET g = g + 1
@@ -99,7 +99,8 @@ Line Operations
 	RE			remark (comment) to end of line
 
     Text
-	PP  (P)			print parameter
+	PP  (P)			print parameter or string
+	PL  (P)			println parameter or string
 
     Variable
 	LD  (D) (P)		D = P

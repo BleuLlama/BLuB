@@ -10,7 +10,9 @@
 #define kBLuBVersion	"v0.02  2013-June-19  yorgle@gmail.com"
 
 // v0.02  2013-June-19  New prompt (Smiley)
-//			ops:	NP RE ST
+//			ops:	NP, RE, ST
+//				LD(!)
+//				PP, PL
 //			cmds:   vars
 //
 // v0.01  2013-June-19  Line entry, line editing
@@ -173,7 +175,7 @@ void getSerialLine( char * buf, int maxbuf, boolean echoback )
 
 void cmd_enew( void )
 {
-	Serial.print( "Formatting EEPROM " );
+	Serial.print( "Clearing EEPROM " );
 	for( int i=0 ; i<kEESize ; i++ )
 	{
 		EEPROM.write( i, 0x00 );
@@ -257,10 +259,10 @@ void cmd_vars( void )
 	Serial.println( "Variables:" );
 	for( int i=0 ; i<(kNVariables/2) ; i++ )
 	{
-		snprintf( buf, 20, "  %c %-9d", i+'a', variables[i] );
+		snprintf( buf, 20, "  %c: %-9d", i+'a', variables[i] );
 		Serial.print( buf );
 
-		snprintf( buf, 20, "    %c %-9d", i+13+'a', variables[i+13] );
+		snprintf( buf, 20, "    %c: %-9d", i+13+'a', variables[i+13] );
 		Serial.println( buf );
 	}
 }
@@ -314,23 +316,54 @@ char * findLine( int line )
 	return bufc;
 }
 
+#define kJRSyntaxError	(-4)
 #define kJRStop		(-3)
 #define kJRNextLine	(-2)
 #define kJRFirstLine	(-1)
+
+#define OpcodeIs( A, B )	 (line[0] == (A) && line[1] == (B) )
+
+// parameters can be:
+//	a-z 	variable source or destination
+//	0..9 	integer source
+//	"x"	text string (for printing)
+
+// 
+int getValue( char * line )
+{
+	if( !line ) return 0;
+
+	SKIP_WHITESPACE( line );
+
+	// check for variable
+	if( *line >= 'a' && *line <= 'z' ){
+		// it's a variable. Dereference it.
+		return variables[VarCharToIndex( *line )];
+	}
+
+	// check for number
+	if( *line >= '0' && *line <= '9' ) {
+		return latoi( line );
+	}
+	
+	// error!
+	return -9999;
+}
+
+#define isVarName( L ) ( (L)>='a' && (L)<='z' )
 
 int evaluate_line( char * line )
 {
 	int len = 0;
 	char * buf = line;
+	char varname;
+	int value;
 
 	if( !line ) return kJRStop;
 
 	// make sure there's an opcode
 	while( *buf != '\0' && *buf != '\n' ) { len++; buf++; }
 	if( len < 2 ) return kJRStop;
-
-#define OpcodeIs( A, B )\
-	(line[0] == (A) && line[1] == (B) )
 
 	// the do-nothing ops
 	if( OpcodeIs( 'N', 'P' )) return kJRNextLine;
@@ -339,7 +372,98 @@ int evaluate_line( char * line )
 	// stop.
 	if( OpcodeIs( 'S', 'T' )) return kJRStop;
 
-	return kJRNextLine;
+	// io
+	// PP print
+	if(    OpcodeIs( 'P', 'P' )
+	    || OpcodeIs( 'P', 'L' ) ) {
+		char newline = 0;
+		if( line[1] == 'L' ) newline=1;
+
+		line += 2; //advance past opcode
+
+		SKIP_WHITESPACE( line );
+		if( *line == '\0' || *line == '\n' ) {
+			// nothing.
+			// this lets people do PL for newlines
+
+		} else if( *line == '"' ) {
+			// printout the literal string
+			line++;
+			
+			while( *line != '"' ) {
+				Serial.write( line, 1 );
+				line++;
+			}
+		} else {
+			value = getValue( line );
+			Serial.print( (long) value, DEC );
+		}
+		if( newline ) {
+			Serial.println( "" );
+		}
+
+		return kJRNextLine;
+	}
+
+	// LD set var
+	if( OpcodeIs( 'L', 'D' )) {
+		line += 2;	// advance past opcode
+		SKIP_WHITESPACE( line );
+		if( !isVarName( *line )) {
+			return kJRSyntaxError;
+		}
+		varname = *line;
+		
+		line += 1;
+
+		variables[VarCharToIndex( varname )] = getValue( line );
+
+		return kJRNextLine;
+	}
+
+
+	// LR/LE/SR/SE load/Save from RAM/EEprom
+	if( OpcodeIs( 'L', 'R' )) return kJRNextLine;
+	if( OpcodeIs( 'L', 'E' )) return kJRNextLine;
+	if( OpcodeIs( 'S', 'R' )) return kJRNextLine;
+	if( OpcodeIs( 'S', 'E' )) return kJRNextLine;
+
+	// math + - / * ++ --
+	if( OpcodeIs( 'M', '+' )) return kJRNextLine;
+	if( OpcodeIs( 'M', '-' )) return kJRNextLine;
+	if( OpcodeIs( 'M', '/' )) return kJRNextLine;
+	if( OpcodeIs( 'M', '*' )) return kJRNextLine;
+	if( OpcodeIs( 'M', 'I' )) return kJRNextLine;
+	if( OpcodeIs( 'M', 'D' )) return kJRNextLine;
+
+	// bitwise << >> & | !
+	if( OpcodeIs( 'M', '<' )) return kJRNextLine;
+	if( OpcodeIs( 'M', '>' )) return kJRNextLine;
+	if( OpcodeIs( 'M', '&' )) return kJRNextLine;
+	if( OpcodeIs( 'M', '|' )) return kJRNextLine;
+	if( OpcodeIs( 'M', '!' )) return kJRNextLine;
+
+	// jumps, < > ==
+	if( OpcodeIs( 'J', 'R' )) return kJRNextLine;
+	if( OpcodeIs( 'J', 'L' )) return kJRNextLine;
+	if( OpcodeIs( 'J', 'G' )) return kJRNextLine;
+	if( OpcodeIs( 'J', 'E' )) return kJRNextLine;
+
+	// Gosubs < > == return
+	if( OpcodeIs( 'G', 'S' )) return kJRNextLine;
+	if( OpcodeIs( 'G', 'L' )) return kJRNextLine;
+	if( OpcodeIs( 'G', 'G' )) return kJRNextLine;
+	if( OpcodeIs( 'G', 'E' )) return kJRNextLine;
+	if( OpcodeIs( 'R', 'T' )) return kJRNextLine;
+
+	// Digital IO  analog/digital write/read
+	if( OpcodeIs( 'A', 'W' )) return kJRNextLine;
+	if( OpcodeIs( 'D', 'W' )) return kJRNextLine;
+	if( OpcodeIs( 'A', 'R' )) return kJRNextLine;
+	if( OpcodeIs( 'D', 'R' )) return kJRNextLine;
+
+	Serial.println( "Unknown opcode." );
+	return kJRStop;
 }
 
 void cmd_run( void )
@@ -404,8 +528,13 @@ void cmd_run( void )
 		// do the thing!
 		cline = latoi( bufc );
 		next = evaluate_line( ln );
+		if( next == kJRSyntaxError ) {
+			Serial.println( "Syntax Error." );
+			next = kJRStop;
+		}
 	}
 
+	Serial.println( "" );
 	Serial.print( "Stopped at line " );
 	Serial.println( (long)cline, DEC );
 }
