@@ -11,6 +11,7 @@
 
 // v0.02  2013-June-19  New prompt (Smiley)
 //			ops:	NP RE ST
+//			cmds:   vars
 //
 // v0.01  2013-June-19  Line entry, line editing
 //			cmds: 	help, mem, new, list
@@ -58,7 +59,7 @@ int latoi( char * buf )
 	// find the integer starting at buf[0]
 	while( *buf <= '9' && *buf >= '0' && v<kBufLen  ) {
 		buffer[v++] = *buf;
-		*buf++;
+		buf++;
 	}
 	if( v == 0 ) {
 		// no number!
@@ -131,7 +132,7 @@ void cmd_help( void )
 	Serial.println( "" );
 	Serial.println( "Available commands:" );
 	//                   ------- ------- ------- ------- -------
-	Serial.println( "    help    mem     new     list" );
+	Serial.println( "    help    mem     vars    new     list" );
 	Serial.println( "    run     tron    troff" );
 	Serial.println( "    elist   eload   esave   enew" );
 	//                   ------- ------- ------- ------- -------
@@ -250,6 +251,20 @@ void init_vars( void )
 	variables[ VarCharToIndex( 'z' ) ] = 0x00;
 }
 
+void cmd_vars( void )
+{
+	char buf[20];
+	Serial.println( "Variables:" );
+	for( int i=0 ; i<(kNVariables/2) ; i++ )
+	{
+		snprintf( buf, 20, "  %c %-9d", i+'a', variables[i] );
+		Serial.print( buf );
+
+		snprintf( buf, 20, "    %c %-9d", i+13+'a', variables[i+13] );
+		Serial.println( buf );
+	}
+}
+
 void cmd_new( void )
 {
 	for( int i=0 ; i<kRamSize ; i++ )
@@ -259,6 +274,7 @@ void cmd_new( void )
 	init_vars();
 
 }
+
 
 void cmd_list( void )
 {
@@ -540,6 +556,7 @@ void loop()
 
 	else if( !strcmp( linebuf, "new" )) { cmd_new(); }
 	else if( !strcmp( linebuf, "list" )) { cmd_list(); }
+	else if( !strcmp( linebuf, "vars" )) { cmd_vars(); }
 	else if( !strcmp( linebuf, "help" )) { cmd_help(); }
 
 	else if( !strcmp( linebuf, "enew" )) { cmd_enew(); }
