@@ -546,32 +546,32 @@ int evaluate_line( char * line )
 	}
 
 	// bitwise << >> & | !
-	if( OpcodeIs( 'M', '<' )){
+	if( OpcodeIs( 'M', '<' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		storeVariable( varname, valueA << valueB, next );
 		return next;
 	}
-	if( OpcodeIs( 'M', '>' )){
+	if( OpcodeIs( 'M', '>' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		storeVariable( varname, valueA >> valueB, next );
 		return next;
 	}
-	if( OpcodeIs( 'M', '&' )){
+	if( OpcodeIs( 'M', '&' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		storeVariable( varname, valueA & valueB, next );
 		return next;
 	}
-	if( OpcodeIs( 'M', '|' )){
+	if( OpcodeIs( 'M', '|' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		storeVariable( varname, valueA | valueB, next );
 		return next;
 	}
-	if( OpcodeIs( 'M', '!' )){
+	if( OpcodeIs( 'M', '!' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		storeVariable( varname, ~valueA, next );
@@ -579,26 +579,26 @@ int evaluate_line( char * line )
 	}
 
 	// jumps, < > ==
-	if( OpcodeIs( 'J', 'R' )){ // JR (A)
+	if( OpcodeIs( 'J', 'R' )) { // JR (A)
 		valueA = getParamValue( &line, &next );
 		next = valueA;
 		return next;
 	}
-	if( OpcodeIs( 'J', 'L' )){ // JR (A) if B < C
+	if( OpcodeIs( 'J', 'L' )) { // JR (A) if B < C
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		valueC = getParamValue( &line, &next );
 		if( valueB < valueC ) next = valueA;
 		return next;
 	}
-	if( OpcodeIs( 'J', 'G' )){ // JR (A) if B > C
+	if( OpcodeIs( 'J', 'G' )) { // JR (A) if B > C
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		valueC = getParamValue( &line, &next );
 		if( valueB > valueC ) next = valueA;
 		return next;
 	}
-	if( OpcodeIs( 'J', 'E' )){ // JR (A) if B == C
+	if( OpcodeIs( 'J', 'E' )) { // JR (A) if B == C
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		valueC = getParamValue( &line, &next );
@@ -607,42 +607,42 @@ int evaluate_line( char * line )
 	}
 
 	// Gosubs < > == return
-	if( OpcodeIs( 'G', 'S' )){
+	if( OpcodeIs( 'G', 'S' )) {
 		return next;
 	}
-	if( OpcodeIs( 'G', 'L' )){
+	if( OpcodeIs( 'G', 'L' )) {
 		return next;
 	}
-	if( OpcodeIs( 'G', 'G' )){
+	if( OpcodeIs( 'G', 'G' )) {
 		return next;
 	}
-	if( OpcodeIs( 'G', 'E' )){
+	if( OpcodeIs( 'G', 'E' )) {
 		return next;
 	}
-	if( OpcodeIs( 'R', 'T' )){
+	if( OpcodeIs( 'R', 'T' )) {
 		return next;
 	}
 
 	// Digital IO  analog/digital write/read
-	if( OpcodeIs( 'A', 'W' )){ // AnalogWrite PORT VALUE
+	if( OpcodeIs( 'A', 'W' )) { // AnalogWrite PORT VALUE
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		analogWrite( valueA, valueB );
 		return next;
 	}
-	if( OpcodeIs( 'D', 'W' )){ // DigitalWrite PORT VALUE
+	if( OpcodeIs( 'D', 'W' )) { // DigitalWrite PORT VALUE
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		digitalWrite( valueA, (valueB==0)?LOW:HIGH );
 		return next;
 	}
-	if( OpcodeIs( 'A', 'R' )){ // AnalogRead var PORT
+	if( OpcodeIs( 'A', 'R' )) { // AnalogRead var PORT
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		storeVariable( varname, analogRead( valueA ), next );
 		return next;
 	}
-	if( OpcodeIs( 'D', 'R' )){
+	if( OpcodeIs( 'D', 'R' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		storeVariable( varname, digitalRead( valueA ), next );
