@@ -7,8 +7,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v0.02  2013-June-19  yorgle@gmail.com"
+#define kBLuBVersion	"v0.03  2013-June-21  yorgle@gmail.com"
 
+// v0.03  2013-June-21  ops:	all but Gosubs
+//			pointer bugfixes
+//
 // v0.02  2013-June-19  New prompt (Smiley)
 //			ops:	NP, RE, ST
 //				LD(!)
@@ -50,12 +53,37 @@ int eeFree = 0;
 
 bool trace = false;
 
+
+#define kJRDBZError	(-5)
+#define kJRSyntaxError	(-4)
+#define kJRStop		(-3)
+#define kJRNextLine	(-2)
+#define kJRFirstLine	(-1)
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #define kBufLen (16)
 char buffer[kBufLen];
 
-int latoi( char * buf )
+#define PRINT_LINE( L ) \
+	{ \
+		for( char * tl = (L) ; *tl != '\n' && *tl != '\0' ; tl++ ) \
+			Serial.write( tl, 1 ); \
+		Serial.println( "" ); \
+	}
+		
+#define SKIP_NUMBER( A ) \
+	while(     (*A) >= '0' \
+		&& (*A) <= '9' \
+		&& (*A) != '\0' ) (A)++;
+
+#define SKIP_WHITESPACE( A ) \
+	while( (   (*A) == ' ' \
+		|| (*A) == '\t' \
+		|| (*A) == ',' \
+	        ) && (*A) != '\0' ) (A)++; /* parens here are IMPORTANT */
+
+int myAtoi( char * buf )
 {
 	int v = 0;
 	// find the integer starting at buf[0]
@@ -83,44 +111,14 @@ int latoi( char * buf )
 
 
 // same as the above, but it affects the line pointer
-int latoiv( char ** buf, int * next )
+int myAtoiP( char ** buf, int * next )
 {
-	int v = 0;
-
-	// find the integer starting at buf[0]
-	while( **buf <= '9' && **buf >= '0' && v<kBufLen  ) {
-		buffer[v++] = **buf;
-		*buf++;
-	}
-	if( v == 0 ) {
-		// no number!
-		return 0;
-	}
-
-	buffer[v] = '\0';
-
-	// my atoi (save on library overhead)
-	v = 0;
-	char * b2 = buffer;
-	while( *b2 ) {
-		v *= 10;
-		v += (*b2)-'0';
-		b2++;
-	}
+	if( *next == kJRSyntaxError ) return 0;
+	int v = myAtoi( *buf );
+	SKIP_NUMBER( *buf );
 	return v;
 }
 
-		
-#define SKIP_NUMBER( A ) \
-	while(     (*A) >= '0' \
-		&& (*A) <= '9' \
-		&& (*A) != '\0' ) A++;
-
-#define SKIP_WHITESPACE( A ) \
-	while( (   (*A) == ' ' \
-		|| (*A) == '\t' \
-		|| (*A) == ',' \
-	        ) && (*A) != '\0' ) A++;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -322,23 +320,19 @@ void cmd_list( void )
 char * findLine( int line )
 {
 	char *bufc = programRam;
-	int cline = latoi( bufc );
+	int cline = myAtoi( bufc );
 
 	while( cline != line && *bufc != '\0' ) {
 		// skip to next line
 		while( *bufc != '\0' && *bufc != '\n' ) bufc++;
 		// fill cline
 		bufc++;
-		cline = latoi( bufc );
+		cline = myAtoi( bufc );
 	}
 
 	return bufc;
 }
 
-#define kJRSyntaxError	(-4)
-#define kJRStop		(-3)
-#define kJRNextLine	(-2)
-#define kJRFirstLine	(-1)
 
 
 // parameters can be:
@@ -361,7 +355,7 @@ int getValue( char * line )
 
 	// check for number
 	if( *line >= '0' && *line <= '9' ) {
-		return latoi( line );
+		return myAtoi( line );
 	}
 	
 	// error!
@@ -375,10 +369,15 @@ int getValue( char * line )
 
 void storeVariable( int identifier, int data, int next )
 {
-	printf( "Store %d in variable %c\n", data, (char) identifier );
-
+	if( identifier < 'a' || identifier > 'z' ) return;
 	if( next == kJRSyntaxError ) return;
 	variables[VarCharToIndex( identifier )] = data;
+}
+
+int retrieveVariable( int identifier )
+{
+	if( identifier < 'a' || identifier > 'z' ) return 0;
+	return variables[VarCharToIndex( identifier )];
 }
 
 
@@ -392,9 +391,10 @@ char getDestVarname( char ** line, int * next )
 	}
 
 	// increment past it for the next calls
+	char vn = **line;
 	(*line)++;
 
-	return **(line-1);
+	return vn;
 }
 
 int getParamValue( char ** line, int * next )
@@ -406,21 +406,17 @@ int getParamValue( char ** line, int * next )
 
 	// check for variable
 	if( **line >= 'a' && **line <= 'z' ){
-printf( "Param value is variable: %c\n", **line );
 		// it's a variable. Dereference it.
 		(*line)++;
-printf( "                         %c\n", **line );
 		return variables[VarCharToIndex( *((*line)-1) )];
 	}
 
 
 	// check for number
 	if( **line >= '0' && **line <= '9' ) {
-printf( "Param value is digit\n" );
-		return latoiv( line, next );
+		return myAtoiP( line, next );
 	}
 	
-printf( "Param value is error\n" );
 	// error!
 	*next = kJRSyntaxError;
 	return 0;
@@ -493,31 +489,10 @@ int evaluate_line( char * line )
 	// LD set var
 	if( OpcodeIs( 'L', 'D' )) {
 		varname = getDestVarname( &line, &next );
-		printf( "destvarname is %c\n", varname );
-
 		valueA = getParamValue( &line, &next );
-		printf( "Value A is %d\n", valueA );
-
-		valueB = getParamValue( &line, &next );
-		printf( "Value B is %d\n", valueB );
-
 		storeVariable( varname, valueA, next );
 		return next;
 	}
-/*
-
-		if( !isVarName( *line )) {
-			return kJRSyntaxError;
-		}
-		varname = *line;
-		
-		line += 1;
-
-		variables[VarCharToIndex( varname )] = getValue( line );
-		return next;
-	}
-*/
-
 
 	// LR/LE/SR/SE load/Save from RAM/EEprom
 	if( OpcodeIs( 'L', 'R' )) return kJRNextLine;
@@ -527,65 +502,152 @@ int evaluate_line( char * line )
 
 	// math + - / * ++ --
 	if( OpcodeIs( 'M', '+' )) {
-		return kJRNextLine;
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		storeVariable( varname, valueA + valueB, next );
+		return next;
 	}
 	if( OpcodeIs( 'M', '-' )) {
-		return kJRNextLine;
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		storeVariable( varname, valueA - valueB, next );
+		return next;
 	}
 	if( OpcodeIs( 'M', '/' )) {
-		return kJRNextLine;
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		if( valueB == 0 ) {
+			next = kJRDBZError;
+		}
+		storeVariable( varname, valueA / valueB, next );
+		return next;
 	}
 	if( OpcodeIs( 'M', '*' )) {
-		return kJRNextLine;
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		storeVariable( varname, valueA * valueB, next );
+		return next;
 	}
 	if( OpcodeIs( 'M', 'I' )) {
-		// param 1
-		if( !isVarName( *line )) {
-			return kJRSyntaxError;
-		}
-		varname = *line;
-		line += 1; // skip past the varname
-
-		variables[VarCharToIndex( varname )]++;
-		return kJRNextLine;
+		varname = getDestVarname( &line, &next );
+		valueA = retrieveVariable( varname );
+		storeVariable( varname, valueA+1, next );
+		return next;
 	}
 	if( OpcodeIs( 'M', 'D' )) {
-		// param 1
-		if( !isVarName( *line )) {
-			return kJRSyntaxError;
-		}
-		varname = *line;
-		line += 1; // skip past the varname
-
-		variables[VarCharToIndex( varname )]--;
-		return kJRNextLine;
+		varname = getDestVarname( &line, &next );
+		valueA = retrieveVariable( varname );
+		storeVariable( varname, valueA -1, next );
+		return next;
 	}
 
 	// bitwise << >> & | !
-	if( OpcodeIs( 'M', '<' )) return kJRNextLine;
-	if( OpcodeIs( 'M', '>' )) return kJRNextLine;
-	if( OpcodeIs( 'M', '&' )) return kJRNextLine;
-	if( OpcodeIs( 'M', '|' )) return kJRNextLine;
-	if( OpcodeIs( 'M', '!' )) return kJRNextLine;
+	if( OpcodeIs( 'M', '<' )){
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		storeVariable( varname, valueA << valueB, next );
+		return next;
+	}
+	if( OpcodeIs( 'M', '>' )){
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		storeVariable( varname, valueA >> valueB, next );
+		return next;
+	}
+	if( OpcodeIs( 'M', '&' )){
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		storeVariable( varname, valueA & valueB, next );
+		return next;
+	}
+	if( OpcodeIs( 'M', '|' )){
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		storeVariable( varname, valueA | valueB, next );
+		return next;
+	}
+	if( OpcodeIs( 'M', '!' )){
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		storeVariable( varname, ~valueA, next );
+		return next;
+	}
 
 	// jumps, < > ==
-	if( OpcodeIs( 'J', 'R' )) return kJRNextLine;
-	if( OpcodeIs( 'J', 'L' )) return kJRNextLine;
-	if( OpcodeIs( 'J', 'G' )) return kJRNextLine;
-	if( OpcodeIs( 'J', 'E' )) return kJRNextLine;
+	if( OpcodeIs( 'J', 'R' )){ // JR (A)
+		valueA = getParamValue( &line, &next );
+		next = valueA;
+		return next;
+	}
+	if( OpcodeIs( 'J', 'L' )){ // JR (A) if B < C
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		valueC = getParamValue( &line, &next );
+		if( valueB < valueC ) next = valueA;
+		return next;
+	}
+	if( OpcodeIs( 'J', 'G' )){ // JR (A) if B > C
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		valueC = getParamValue( &line, &next );
+		if( valueB > valueC ) next = valueA;
+		return next;
+	}
+	if( OpcodeIs( 'J', 'E' )){ // JR (A) if B == C
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		valueC = getParamValue( &line, &next );
+		if( valueB == valueC ) next = valueA;
+		return next;
+	}
 
 	// Gosubs < > == return
-	if( OpcodeIs( 'G', 'S' )) return kJRNextLine;
-	if( OpcodeIs( 'G', 'L' )) return kJRNextLine;
-	if( OpcodeIs( 'G', 'G' )) return kJRNextLine;
-	if( OpcodeIs( 'G', 'E' )) return kJRNextLine;
-	if( OpcodeIs( 'R', 'T' )) return kJRNextLine;
+	if( OpcodeIs( 'G', 'S' )){
+		return next;
+	}
+	if( OpcodeIs( 'G', 'L' )){
+		return next;
+	}
+	if( OpcodeIs( 'G', 'G' )){
+		return next;
+	}
+	if( OpcodeIs( 'G', 'E' )){
+		return next;
+	}
+	if( OpcodeIs( 'R', 'T' )){
+		return next;
+	}
 
 	// Digital IO  analog/digital write/read
-	if( OpcodeIs( 'A', 'W' )) return kJRNextLine;
-	if( OpcodeIs( 'D', 'W' )) return kJRNextLine;
-	if( OpcodeIs( 'A', 'R' )) return kJRNextLine;
-	if( OpcodeIs( 'D', 'R' )) return kJRNextLine;
+	if( OpcodeIs( 'A', 'W' )){ // AnalogWrite PORT VALUE
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		analogWrite( valueA, valueB );
+		return next;
+	}
+	if( OpcodeIs( 'D', 'W' )){ // DigitalWrite PORT VALUE
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		digitalWrite( valueA, (valueB==0)?LOW:HIGH );
+		return next;
+	}
+	if( OpcodeIs( 'A', 'R' )){ // AnalogRead var PORT
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		storeVariable( varname, analogRead( valueA ), next );
+		return next;
+	}
+	if( OpcodeIs( 'D', 'R' )){
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		storeVariable( varname, digitalRead( valueA ), next );
+		return next;
+	}
 
 	Serial.println( "Unknown opcode." );
 	return kJRStop;
@@ -651,8 +713,12 @@ void cmd_run( void )
 		}
 
 		// do the thing!
-		cline = latoi( bufc );
+		cline = myAtoi( bufc );
 		next = evaluate_line( ln );
+		if( next == kJRDBZError ) {
+			Serial.println( "Divide By Zero Error." );
+			next = kJRStop;
+		}
 		if( next == kJRSyntaxError ) {
 			Serial.println( "Syntax Error." );
 			next = kJRStop;
@@ -694,7 +760,7 @@ void cmd_removeLine( int lineNo, bool verbose )
 	    	if( *bufc == '\0' ) break;
 
 		// check the current pointer for the matching line
-		int cline = latoi( bufc );
+		int cline = myAtoi( bufc );
 
 		// find the end point
 		bufn = bufc;
@@ -733,7 +799,7 @@ void cmd_insertLine( char * theLine )
 
 	// find the appropriate location to insert it
 
-	int lineNo = latoi( theLine );
+	int lineNo = myAtoi( theLine );
 
 	char *bufc = programRam;
 	char *bufn = 0;
@@ -743,7 +809,7 @@ void cmd_insertLine( char * theLine )
 	    	if( *bufc == '\0' ) break;
 
 		// check the current pointer for the matching line
-		int cline = latoi( bufc );
+		int cline = myAtoi( bufc );
 
 		// find the end point
 		bufn = bufc;
@@ -833,7 +899,7 @@ void loop()
 		bptr = linebuf;
 
 		// get the line number
-		int v = latoi( bptr );
+		int v = myAtoi( bptr );
 		if( v < 0 || v > 999999 ) {
 			Serial.println( "Line Number out of range." );
 			goto cleanup;

@@ -105,6 +105,7 @@ Line Operations
     Variable
 	LD  (D) (P)		D = P
 
+NI
 	LR  (D) (P)		D = ram[ P ]
 	LE  (D) (P)		D = EEPROM[ P ]
 	SR  (D) (P)		ram[ P ] = D
@@ -132,6 +133,7 @@ Line Operations
 	JG  (D) (P) (Q)		goto D if P > Q
 	JE  (D) (P) (Q)		goto D if P == Q
 
+NI:
 	GS  (D)			gosub D
 	GL  (D) (P) (Q)		gosub D if P < Q
 	GG  (D) (P) (Q)		gosub D if P > Q
