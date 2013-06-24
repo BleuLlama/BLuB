@@ -84,11 +84,12 @@ interface is a line based text input.
 # Variables
 
 There are 26 variables, indicated by lowercase letters.
-Some varialbes are preset with values at the beginning of runtime.
-	t = 255
-	f = 0
-	z = 0
-	h = 128
+Some variables are preset with values at the beginning of runtime.
+
+- t = 255
+- f = 0
+- z = 0
+- h = 128
 
 The remaining variables are initialized to '0' at start of runtime.
 
