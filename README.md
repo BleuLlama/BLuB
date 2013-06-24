@@ -120,6 +120,14 @@ These commands are typed in at the BLuB prompt by the user
         M&  (D) (P)         LET D = D & P   (bit mask)
         M|  (D) (P)         LET D = D | P   (bit set)
         M!  (D)             LET D = ~D      (invert bits)
+
+    Conditionals
+        IF (P) < (Q) GO (D)  IF P<Q THEN GOTO D
+        IF (P) = (Q) GO (D)  IF P=Q THEN GOTO D
+        IF (P) > (Q) GO (D)  IF P>Q THEN GOTO D
+        IF (P) < (Q) CA (D)  IF P<Q THEN GOSUB D
+        IF (P) = (Q) CA (D)  IF P=Q THEN GOSUB D
+        IF (P) > (Q) CA (D)  IF P>Q THEN GOSUB D
         
     GOTO
         GO  (D)             GOTO D
@@ -268,7 +276,6 @@ Just a little to show how CAlls can be done
 
 
 	10 RE Call examples
-
 	20 LE a8
 	30 PR "Value "
 	40 PR a
@@ -278,8 +285,8 @@ Just a little to show how CAlls can be done
 
 	100 MI a
 	110 G< 30 a13
-	120 PL
-	130 GO 5000
+	130 PL "Done."
+	140 EN
 	
 	1000 PL " is less than 10"
 	1010 CR
@@ -290,37 +297,35 @@ Just a little to show how CAlls can be done
 	3000 PL " is, in fact, 10"
 	3010 CR
 	
-	5000 RE do conditionals different this time
-	5020 LE a8
 
-	5030 PR "Value " 
-	5040 PR a
-	5050 CA 8000
-	5060 CA 6000
-	5070 CA 7000
 
-	5100 MI a
-	5110 G< 5030 a 13
-	5120 PL "Done."
-	5130 EN
+## CAll/GOSUB example number 2
 
-	6000 G< 6020 a 10
-	6010 CR
-	6020 PL " is less than 10"
-	6040 CR
+This does the same as the above, but a litle differently
 
-	7000 G> 7020 a 10
-	7010 CR
-	7020 PL " is greater than 10"
-	7040 CR
+	10 RE do conditionals different this time
+	20 LE a8
 
-	8000 G= 8020 a 10
-	8010 CR
-	8020 PL " is in fact than 10"
-	8040 CR
+	30 RE This is the new loop
+	40 CA 1000
+	50 MI a
+	60 G< 30 a 13
+	70 PL "Done."
+	80 EN
 
-	
+	1000 RE the subroutine is here, and does the compare
+	1010 PR "Value " 
+	1020 PR a
+	1030 G< 2000 a 10
+	1040 G> 2100 a 10
+	1050 G= 2200 a 10
 
+	2000 PL " is less than 10"
+	2010 CR
+	2100 PL " is greater than 10"
+	2110 CR
+	2200 PL " is, in fact, 10"
+	2210 CR
 
 
 ## Depleat the Call stack
@@ -336,4 +341,30 @@ can call itself.  Here's our version of it:
 	    40 MIa
 	    50 CA20
 
+## IF examples
 
+Here are some examples using IF statements
+
+	10 RE IF examples
+	30 LE g0
+
+	40 PR "Loop number "
+	50 PL g
+
+	60 IF g < 5 CA 1000
+	70 IF g > 5 CA 1100
+	80 IF g = 5 CA 1200
+
+	100 MI g
+	110 IF g < 10 GO 40
+	120 PL "Done!" 
+	130 EN
+
+	1000 PL "  Less than 5";
+	1010 CR
+
+	1100 PL "  Greater than 5";
+	1110 CR
+	
+	1200 PL "  Equals than 5";
+	1210 CR

@@ -13,6 +13,9 @@
 //			better documentation
 //			added pre-text whitespace elimination
 //			WA, RN, RA, AS
+//			PRint changed from PP
+//			CAll added (GOSUB)
+//			IF statement added
 //
 // v0.04  2013-June-21  cmds: files,load,save then removed. oops
 //			ops	G
@@ -874,6 +877,54 @@ int evaluate_line( char * line, char **bufc )
 		gosubStack[gosubLevel] = NULL;
 		next = kJRNextLine; // force this.
 
+		return next;
+	}
+
+
+	////////////////////////////////////////
+	// IF - conditional with GOto or CAll
+
+	// IF P < Q GO D
+	// IF P > Q GO D
+	// IF P = Q GO D
+	// IF P < Q CA D
+	// IF P > Q CA D
+	// IF P = Q CA D
+
+	if( OpcodeIs( 'I', 'F' )) {
+		valueA = getParamValue( &line, &next );
+		SKIP_WHITESPACE( line );
+		char cond = *line; /* should be < = > */
+		if(   cond != '<'
+		   && cond != '=' 
+		   && cond != '>' ) next = kJRSyntaxError;
+		line++;
+		valueB = getParamValue( &line, &next );
+		SKIP_WHITESPACE( line );
+		char opY = *line; line++;
+		char opZ = *line; line++;
+		char opDO = 0;
+		if( opY == 'G' && opZ == 'O' ) opDO = 1;
+		if( opY == 'C' && opZ == 'A' ) opDO = 2;
+		if( opDO == 0 ) next = kJRSyntaxError;
+		valueC = getParamValue( &line, &next );
+
+		// bail out should there be a mess
+		if( next != kJRNextLine ) return next;
+
+		// there's no good way to do this...
+		if( opDO == 1 ) {
+			if( cond == '<' && (valueA < valueB )) next = valueC;
+			if( cond == '>' && (valueA > valueB )) next = valueC;
+			if( cond == '=' && (valueA == valueB )) next = valueC;
+		} else if( opDO == 2 ) {
+			if( cond == '<' && (valueA < valueB ))
+				doCall( valueC, bufc, &next );
+			if( cond == '>' && (valueA > valueB ))
+				doCall( valueC, bufc, &next );
+			if( cond == '=' && (valueA == valueB ))
+				doCall( valueC, bufc, &next );
+		}
 		return next;
 	}
 
