@@ -16,6 +16,7 @@
 //			PRint changed from PP
 //			CAll added (GOSUB)
 //			IF statement added
+//			ON statement added
 //
 // v0.04  2013-June-21  cmds: files,load,save then removed. oops
 //			ops	G
@@ -498,6 +499,21 @@ int getParamValue( char ** line, int * next )
 	return 0;
 }
 
+#define kGoCa_unk	(0)
+#define kGoCa_GO	(1)
+#define kGoCa_CA	(2)
+
+char getGoOrCa( char ** line, int * next )
+{
+	SKIP_WHITESPACE( *line );
+	char opY = **line; (*line)++;
+	char opZ = **line; (*line)++;
+
+	if( opY == 'G' && opZ == 'O' ) return kGoCa_GO;
+	if( opY == 'C' && opZ == 'A' ) return kGoCa_CA;
+	return kGoCa_unk;
+}
+
 void doCall( int newLine, char **bufc, int * next )
 {
 	if( *next == kJRSyntaxError ) return;
@@ -900,24 +916,20 @@ int evaluate_line( char * line, char **bufc )
 		   && cond != '>' ) next = kJRSyntaxError;
 		line++;
 		valueB = getParamValue( &line, &next );
-		SKIP_WHITESPACE( line );
-		char opY = *line; line++;
-		char opZ = *line; line++;
-		char opDO = 0;
-		if( opY == 'G' && opZ == 'O' ) opDO = 1;
-		if( opY == 'C' && opZ == 'A' ) opDO = 2;
-		if( opDO == 0 ) next = kJRSyntaxError;
+
+		char opDO = getGoOrCa( &line, &next );
+
 		valueC = getParamValue( &line, &next );
 
 		// bail out should there be a mess
 		if( next != kJRNextLine ) return next;
 
 		// there's no good way to do this...
-		if( opDO == 1 ) {
+		if( opDO == kGoCa_GO ) {
 			if( cond == '<' && (valueA < valueB )) next = valueC;
 			if( cond == '>' && (valueA > valueB )) next = valueC;
 			if( cond == '=' && (valueA == valueB )) next = valueC;
-		} else if( opDO == 2 ) {
+		} else if( opDO == kGoCa_CA ) {
 			if( cond == '<' && (valueA < valueB ))
 				doCall( valueC, bufc, &next );
 			if( cond == '>' && (valueA > valueB ))
@@ -925,6 +937,27 @@ int evaluate_line( char * line, char **bufc )
 			if( cond == '=' && (valueA == valueB ))
 				doCall( valueC, bufc, &next );
 		}
+		return next;
+	}
+
+	if( OpcodeIs( 'O', 'N' )) {
+		valueA = getParamValue( &line, &next );
+		char opDO = getGoOrCa( &line, &next );
+
+		for( int i = 0 ; i<=valueA && (next == kJRNextLine); i++ )
+		{
+			valueB = getParamValue( &line, &next );
+			if( i == valueA )
+			{
+				if( opDO == kGoCa_GO ) return valueB;
+				if( opDO == kGoCa_CA ) {
+					doCall( valueB, bufc, &next );
+					return next;
+				}
+			}
+		}
+
+
 		return next;
 	}
 

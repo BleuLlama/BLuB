@@ -128,6 +128,9 @@ These commands are typed in at the BLuB prompt by the user
         IF (P) < (Q) CA (D)  IF P<Q THEN GOSUB D
         IF (P) = (Q) CA (D)  IF P=Q THEN GOSUB D
         IF (P) > (Q) CA (D)  IF P>Q THEN GOSUB D
+
+	ON (P) GO (D)
+	ON (P) CA (D)
         
     GOTO
         GO  (D)             GOTO D
@@ -141,6 +144,7 @@ These commands are typed in at the BLuB prompt by the user
         C>  (D) (P) (Q)     IF ( P < Q ) THEN CALL D
         C=  (D) (P) (Q)     IF ( P = Q ) THEN CALL D
         CR                  RETURN
+
 
     Digital IO
         AW  (P) (V)         analog write the value V to pin P
@@ -368,3 +372,34 @@ Here are some examples using IF statements
 	
 	1200 PL "  Equals than 5";
 	1210 CR
+
+
+## ON examples
+
+	10 RE ON example
+	20 LE g0
+	30 PR "Loop number " 
+	40 PL g
+	50 ON g GO 1000 1100 1200 1300 1400 1500
+	60 MI g
+	70 IF g < 5 GO 30
+	80 PL "Done!" 
+	90 EN
+
+	1000 PL "Zero"
+	1010 CR
+
+	1100 PL "One"
+	1110 CR
+
+	1200 PL "Two"
+	1210 CR
+
+	1300 PL "Three"
+	1310 CR
+
+	1400 PL "Four"
+	1410 CR
+
+	1500 PL "Five"
+	1510 CR
