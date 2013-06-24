@@ -40,16 +40,17 @@ to be stored into the EEPROM
 The user-interaction interface for this is serial, and the desktop
 interface is a line based text input.
 
-	(Line Number) (Opcode) (Optional Operands)
+(Line Number) (Opcode) (Optional Operands)
 
-	Line number is an immediate integer base-10 numerical digit.
-	Opcode is two uppercase letters
-	Operands are lowercase letters for variables
-	Operands are integer base-10 digits for immediate numbers
-	Operands of multiple digits can be separated with a comma
-	Operands of string type start with a double quote to another dquote 
+- Line number is an immediate integer base-10 numerical digit.
+- Opcode is two uppercase letters
+- Operands are lowercase letters for variables
+- Operands are integer base-10 digits for immediate numbers
+- Operands of multiple digits can be separated with a comma
+- Operands of string type start with a double quote to another dquote 
 
-	Here's an example program in BASIC:
+
+## Example BASIC program (fibonacci sequence)
 
 	    10 REM fibonacci sequence
 	    20 LET a = 1
@@ -62,22 +63,26 @@ interface is a line based text input.
 	    90 NEXT z
 	    100 END
 
-	And here's the equivalent in BLuB:
+
+## Same example in BLuB:
 
 	    Code                Explanation
-	    10LEa1		; LET a = 1
-	    20 LE b 2		; LET b = 1
-	    30 LE g 0		; LET g = 0
-	    40 M+ c a b		; LET c = a + b
-	    40 M+cab		; LET  c = a + b
-	    50 PPa		; PRINT A
-	    60 PP" "		; PRINT " "
-	    70 LE ab		; LET a = b
-	    80 LE bc		; LET b = c
-	    90 MI g		; LET g = g + 1
-	    100 G< 40 g 20	; IF (G < 20 ) GOTO 40
-	    110 EN
+	    10 RE Fibonacci Sequence
+	    20LEa1		; LET a = 1
+	    30 LE b 2		; LET b = 1
+	    40 LE g 0		; LET g = 0
+	    50 M+cab		; LET  c = a + b
+	    60 PPa		; PRINT A
+	    70 PP" "		; PRINT " "
+	    80 LE ab		; LET a = b
+	    90 LE bc		; LET b = c
+	    100 MI g		; LET g = g + 1
+	    110 G< 40 g 20	; IF (G < 20 ) GOTO 40
+	    120 EN
 	
+
+# Variables
+
 There are 26 variables, indicated by lowercase letters.
 Some varialbes are preset with values at the beginning of runtime.
 	t = 255
@@ -89,7 +94,7 @@ The remaining variables are initialized to '0' at start of runtime.
 
 --
 
-## Interface Commands:
+# Interface Commands:
 	mem	display amount of free space in RAM and EEPROM
 	help	display a list of commands and version information
 
@@ -106,7 +111,7 @@ The remaining variables are initialized to '0' at start of runtime.
 	esave	save the program from memory to EEPROM
 
 
-## Program Opcodes:
+# Program Opcodes:
 
     System
 	RE			REM - add a comment
