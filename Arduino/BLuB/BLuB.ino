@@ -7,8 +7,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v0.03  2013-June-21  yorgle@gmail.com"
+#define kBLuBVersion	"v0.05  2013-June-24  yorgle@gmail.com"
 
+// v0.05  2013-June-24  rearranged opcode names, added IC/L
+//
 // v0.04  2013-June-21  cmds: files,load,save then removed. oops
 //			ops	G
 //
@@ -516,17 +518,22 @@ int evaluate_line( char * line )
 	// skip any pre-pended whitespace
 	SKIP_WHITESPACE( line );
 
-	// the do-nothing ops
-	if( OpcodeIs( 'N', 'P' )) return kJRNextLine;
+	////////////////////////////////////////
+	// STRUCTURE
+
+	// RE - REM - comment
 	if( OpcodeIs( 'R', 'E' )) return kJRNextLine;
 
+	// EN - END - stop runtime
+	if( OpcodeIs( 'E', 'N' )) return kJRStop;
 
-	// stop.
-	if( OpcodeIs( 'S', 'T' )) return kJRStop;
 
 
-	// io
-	// PP print (Special case of the interpreter)
+	////////////////////////////////////////
+	// USER IO
+
+	// PP - PRINT ; - print out a variable, parameter or string
+	// PL - PRINT - print out a variable, parameter or string, with newline
 	if(    OpcodeIs( 'P', 'P' )
 	    || OpcodeIs( 'P', 'L' ) ) {
 
@@ -554,21 +561,64 @@ int evaluate_line( char * line )
 	}
 
 
-	// LD set var
-	if( OpcodeIs( 'L', 'D' )) {
+	// IC - INCHR - input a single character to a variable
+	// IL - INCHR (to EOL) - absorb to the end of the line, return first 
+	if(    OpcodeIs( 'I', 'C' )
+	    || OpcodeIs( 'I', 'L' ) ) {
+		varname = getDestVarname( &line, &next );
+		valueA = Serial.read();
+		storeVariable( varname, valueA, next );
+
+		if( op1 == 'L' ) {
+			while( valueA != '\n' ) {
+				valueA = Serial.read();
+			}
+		}
+
+		return kJRNextLine;
+	}
+
+
+	////////////////////////////////////////
+	// VARIABLE ASSIGNMENT
+
+	// LE - LET - set a variable
+	if( OpcodeIs( 'L', 'E' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		storeVariable( varname, valueA, next );
 		return next;
 	}
 
-	// LR/LE/SR/SE load/Save from RAM/EEprom
-	if( OpcodeIs( 'L', 'R' )) return kJRNextLine;
-	if( OpcodeIs( 'L', 'E' )) return kJRNextLine;
-	if( OpcodeIs( 'S', 'R' )) return kJRNextLine;
-	if( OpcodeIs( 'S', 'E' )) return kJRNextLine;
 
-	// math + - / * ++ --
+	////////////////////////////////////////
+	// PEEK and POKE
+
+	// PE - PEEK - Look in a RAM address
+	if( OpcodeIs( 'P', 'E' )) {
+		return kJRNextLine;
+	}
+
+	// PO - POKE - Store into a RAM address
+	if( OpcodeIs( 'P', 'O' )) {
+		return kJRNextLine;
+	}
+
+	// EE - PEEK - Look in an EEPROM address
+	if( OpcodeIs( 'E', 'E' )) {
+		return kJRNextLine;
+	}
+
+	// EO - POKE - Store int an EEPROM address
+	if( OpcodeIs( 'E', 'O' )) {
+		return kJRNextLine;
+	}
+
+
+	////////////////////////////////////////
+	// MATH
+
+	// M+ - LET A = B + C - addition
 	if( OpcodeIs( 'M', '+' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
@@ -576,6 +626,8 @@ int evaluate_line( char * line )
 		storeVariable( varname, valueA + valueB, next );
 		return next;
 	}
+
+	// M- - LET A = B - C - subtraction
 	if( OpcodeIs( 'M', '-' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
@@ -583,6 +635,8 @@ int evaluate_line( char * line )
 		storeVariable( varname, valueA - valueB, next );
 		return next;
 	}
+
+	// M/ - LET A = B / C - division
 	if( OpcodeIs( 'M', '/' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
@@ -593,6 +647,8 @@ int evaluate_line( char * line )
 		storeVariable( varname, valueA / valueB, next );
 		return next;
 	}
+
+	// M* - LET A = B * C - multiplication
 	if( OpcodeIs( 'M', '*' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
@@ -600,12 +656,16 @@ int evaluate_line( char * line )
 		storeVariable( varname, valueA * valueB, next );
 		return next;
 	}
+
+	// MI - LET A = A+1 - increment variable
 	if( OpcodeIs( 'M', 'I' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = retrieveVariable( varname );
 		storeVariable( varname, valueA+1, next );
 		return next;
 	}
+
+	// MD - LET A = A-1 - decrement variable
 	if( OpcodeIs( 'M', 'D' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = retrieveVariable( varname );
@@ -613,7 +673,11 @@ int evaluate_line( char * line )
 		return next;
 	}
 
-	// bitwise << >> & | !
+
+	////////////////////////////////////////	
+	// BITWISE MATH
+
+	// M< - LET A = B << C - shifts B left by C bits
 	if( OpcodeIs( 'M', '<' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
@@ -621,24 +685,32 @@ int evaluate_line( char * line )
 		storeVariable( varname, valueA << valueB, next );
 		return next;
 	}
+
+	// M> - LET A = B >> C - shifts B right by C bits
 	if( OpcodeIs( 'M', '>' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		storeVariable( varname, valueA >> valueB, next );
 		return next;
 	}
+
+	// M& - LET A = B & C - bitwise "and"/"mask" of B with C
 	if( OpcodeIs( 'M', '&' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		storeVariable( varname, valueA & valueB, next );
 		return next;
 	}
+
+	// M| - LET A = B | C - bitwise "or"/"set" of B with C
 	if( OpcodeIs( 'M', '|' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		storeVariable( varname, valueA | valueB, next );
 		return next;
 	}
+
+	// M! - LET A = NOT B - bitwise inversion of B
 	if( OpcodeIs( 'M', '!' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
@@ -646,27 +718,37 @@ int evaluate_line( char * line )
 		return next;
 	}
 
-	// jumps, < > ==
-	if( OpcodeIs( 'J', 'R' )) { // JR (A)
+
+	////////////////////////////////////////	
+	// GOTOs
+
+	// GO - GOTO - continue on the specified line
+	if( OpcodeIs( 'G', 'O' )) {
 		valueA = getParamValue( &line, &next );
 		next = valueA;
 		return next;
 	}
-	if( OpcodeIs( 'J', 'L' )) { // JR (A) if B < C
+
+	// GO - IF ( B < C ) GOTO A - Conditional greater-than GOTO
+	if( OpcodeIs( 'G', '<' )) {
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		valueC = getParamValue( &line, &next );
 		if( valueB < valueC ) next = valueA;
 		return next;
 	}
-	if( OpcodeIs( 'J', 'G' )) { // JR (A) if B > C
+
+	// GO - IF ( B > C ) GOTO A - Conditional less-than GOTO
+	if( OpcodeIs( 'G', '>' )) {
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		valueC = getParamValue( &line, &next );
 		if( valueB > valueC ) next = valueA;
 		return next;
 	}
-	if( OpcodeIs( 'J', 'E' )) { // JR (A) if B == C
+
+	if( OpcodeIs( 'G', '=' )) {
+	// GO - IF ( B = C ) GOTO A - Conditional equality GOTO
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		valueC = getParamValue( &line, &next );
@@ -674,12 +756,10 @@ int evaluate_line( char * line )
 		return next;
 	}
 
-	// Gosubs < > == return
-	if( OpcodeIs( 'G', 'S' )) {
-		return next;
-	}
-
 #ifdef DOGOSUB
+	// CS - GOSUB - CALL subroutine A
+	if( OpcodeIs( 'C', 'A' )) {
+
 /*
 #define kNGosubs (15)
 char gosubPtr = 0;
@@ -687,16 +767,26 @@ char * gosubStack[ kNGosubs ];
 if( next == kJRGosubStack ) {
 */
 
-	if( OpcodeIs( 'G', 'L' )) {
 		return next;
 	}
-	if( OpcodeIs( 'G', 'G' )) {
+
+	// C< - IF ( B < C ) GOSUB A - conditional less-than GOSUB
+	if( OpcodeIs( 'C', '<' )) {
 		return next;
 	}
-	if( OpcodeIs( 'G', 'E' )) {
+
+	// C> - IF ( B > C ) GOSUB A - conditional greater-than GOSUB
+	if( OpcodeIs( 'C', '>' )) {
 		return next;
 	}
-	if( OpcodeIs( 'R', 'T' )) {
+
+	// C= - IF ( B = C ) GOSUB A - conditional equality GOSUB
+	if( OpcodeIs( 'C', 'E' )) {
+		return next;
+	}
+
+	// CR - CALL-RETURN - return from a subroutine
+	if( OpcodeIs( 'C', 'R' )) {
 		if( gosubPtr <= 0 ) {
 			return kJRGosubStack;
 		} else {
@@ -706,25 +796,34 @@ if( next == kJRGosubStack ) {
 	}
 #endif
 
+	////////////////////////////////////////
 	// Digital IO  analog/digital write/read
-	if( OpcodeIs( 'A', 'W' )) { // AnalogWrite PORT VALUE
+
+	// AW - analogWrite - Write to pin A the value B
+	if( OpcodeIs( 'A', 'W' )) {
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		analogWrite( valueA, valueB );
 		return next;
 	}
-	if( OpcodeIs( 'D', 'W' )) { // DigitalWrite PORT VALUE
+
+	// DW - digitalWrite - Write to pin A the value B
+	if( OpcodeIs( 'D', 'W' )) {
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		digitalWrite( valueA, (valueB==0)?LOW:HIGH );
 		return next;
 	}
-	if( OpcodeIs( 'A', 'R' )) { // AnalogRead var PORT
+
+	// AR - analogRead - Read into variable A, from pin B
+	if( OpcodeIs( 'A', 'R' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
 		storeVariable( varname, analogRead( valueA ), next );
 		return next;
 	}
+
+	// DR - digitalRead - Read into variable A, from pin B
 	if( OpcodeIs( 'D', 'R' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );

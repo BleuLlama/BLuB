@@ -94,55 +94,57 @@ Commands:
 
 Line Operations
     System
-	NP			Do nothing
-	ST			Stop
-	RE			remark (comment) to end of line
+	RE			REM - add a comment
+	EN			END - end runtime
 
-    Text
-	PP  (P)			print parameter or string
-	PL  (P)			println parameter or string
+    Text IO
+	PP  (P)			PRINT ; - print a parameter or string
+	PL  (P)			PRINT   - output a parameter or string (newline)
 
-    Variable
-	LD  (D) (P)		D = P
+	IC  (D)			INCHR - LET D = (newly INPUTTED character)
+	IL  (D)			same as IC, but ingore to end of line.
 
-NI
-	LR  (D) (P)		D = ram[ P ]
-	LE  (D) (P)		D = EEPROM[ P ]
-	SR  (D) (P)		ram[ P ] = D
-	SE  (D) (P)		EEPROM[ P ] = D
+    Variable Assignment
+	LE  (D) (P)		LET D = P
+
+    Peek and Poke
+	PE  (D) (A)		LET D = PEEK( A ) - get from RAM
+	PO  (A) (V)		POKE( A, V )      - store V in RAM
+	EE  (D) (A)		LET D = PEEK( A ) - get from EEPROM
+	EO  (A) (V)		POKE( A, V )      - store V in EEPROM
 
     Math
-	M+  (D) (P) (Q)		D = P + Q
-	M-  (D) (P) (Q)		D = P - Q
-	M/  (D) (P) (Q)		D = P / Q
-	M*  (D) (P) (Q)		D = P * Q
+	M+  (D) (P) (Q)		LET D = P + Q
+	M-  (D) (P) (Q)		LET D = P - Q
+	M/  (D) (P) (Q)		LET D = P / Q
+	M*  (D) (P) (Q)		LET D = P * Q
 
-	MI  (D)			D = D + 1
-	MD  (D)			D = D - 1
+	MI  (D)			LET D = D + 1
+	MD  (D)			LET D = D - 1
 
     Bitwise operations
-	M<  (D)	(P)		D = D << P  (left shift)
-	M>  (D)	(P)		D = D >> P  (right shift)
-	M&  (D) (P)		D = D & P   (bit mask)
-	M|  (D) (P)		D = D | P   (bit set)
-	M!  (D)			D = ~D      (invert bits)
+	M<  (D)	(P)		LET D = D << P  (left shift)
+	M>  (D)	(P)		LET D = D >> P  (right shift)
+	M&  (D) (P)		LET D = D & P   (bit mask)
+	M|  (D) (P)		LET D = D | P   (bit set)
+	M!  (D)			LET D = ~D      (invert bits)
 	
-    Jumps
-	JR  (D)			goto D
-	JL  (D) (P) (Q)		goto D if P < Q
-	JG  (D) (P) (Q)		goto D if P > Q
-	JE  (D) (P) (Q)		goto D if P == Q
+    GOTO
+	GO  (D)			GOTO D
+	G<  (D) (P) (Q)		IF ( P > Q ) THEN GOTO D
+	G>  (D) (P) (Q)		IF ( P < Q ) THEN GOTO D
+	G=  (D) (P) (Q)		IF ( P = Q ) THEN GOTO D
 
-NI:
-	GS  (D)			gosub D
-	GL  (D) (P) (Q)		gosub D if P < Q
-	GG  (D) (P) (Q)		gosub D if P > Q
-	GE  (D) (P) (Q)		gosub D if P == Q
-	RT			return from subroutine
+    GOSUB/CALL
+	CA  (D)			CALL D
+	C<  (D) (P) (Q)		IF ( P > Q ) THEN CALL D
+	C>  (D) (P) (Q)		IF ( P < Q ) THEN CALL D
+	C=  (D) (P) (Q)		IF ( P = Q ) THEN CALL D
+	CR			RETURN
 
     Digital IO
-	AW  (D) (V)		analog write to Destination pin, value V
-	DW  (D) (V)		digital write to Destination pin, value V
-	AR  (D) (P)		analog read to D the value of pin P
-	DR  (D) (P)		digital read to D the value of pin P
+	AW  (P) (V)		analog write the value V to pin P
+	DW  (P) (V)		digital write the value V to pin P
+	AR  (D) (P)		analog read the value of pin P to varable D
+	DR  (D) (P)		digital read the value of pin P to varable D
 

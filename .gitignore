@@ -19,3 +19,4 @@ blub.exe
 eeprom.dat
 
 *.swp
+:w
