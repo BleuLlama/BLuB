@@ -729,7 +729,7 @@ int evaluate_line( char * line )
 		return next;
 	}
 
-	// GO - IF ( B < C ) GOTO A - Conditional greater-than GOTO
+	// G< - IF ( B < C ) GOTO A - Conditional greater-than GOTO
 	if( OpcodeIs( 'G', '<' )) {
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
@@ -738,7 +738,7 @@ int evaluate_line( char * line )
 		return next;
 	}
 
-	// GO - IF ( B > C ) GOTO A - Conditional less-than GOTO
+	// G> - IF ( B > C ) GOTO A - Conditional less-than GOTO
 	if( OpcodeIs( 'G', '>' )) {
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
@@ -748,7 +748,7 @@ int evaluate_line( char * line )
 	}
 
 	if( OpcodeIs( 'G', '=' )) {
-	// GO - IF ( B = C ) GOTO A - Conditional equality GOTO
+	// G= - IF ( B = C ) GOTO A - Conditional equality GOTO
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
 		valueC = getParamValue( &line, &next );

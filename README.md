@@ -1,7 +1,9 @@
 BLuBasic
 ========
 
-A (hopefully) very tiny variant of a BASIC style language.
+A small variant of a BASIC style language, simplifying the syntax and
+borrowing some concepts from ASM.
+
 
 # Overview
 
@@ -10,71 +12,84 @@ but instead use BASIC and its ease of use to be inspiration for a
 VERY small programmers shell for use on very low footprint
 microcontrollers.
 
-The project will provide two methods for building it:
+The project provides two methods for building it:
 
 1. unixey desktop.  This target is for building it for runtime on a 
    desktop machine (Mac OSX, MinGW on Windows, Linux) for use of learning
-   or for debugging without a microcontroller.
+   or for debugging without a microcontroller.  This is accomplished via
+   use of the content in the "ardsim" subdirectory.  This uses C++ 
+   overloading to provide exact replacements for the ARDUINO interface
+   without changing any code in the .INO Arduino source file.
 
 2. Arduino source.  This target is for use for building it for use on
-   Arduino devices.
+   Arduino devices.  Just double-click the .INO file, and it will open 
+   inside of the Arduino IDE.
 
-It does not rely on SD or Flash storage, to save on space, but
-instead will use the RAM for live use, and EEPROM for storage and
-persistance between power cycles.
+This does not provide an interface for SD or other storage, and none
+is planned.  This is to keep everything small and self-contained.  It 
+uses RAM for the primary runtime space, and EEPROM for power-off storage.
+
+It is expected that the serial interface will be used to input programs
+to be stored into the EEPROM
+
 
 --
 
-# Preliminary Syntax and opcodes
+# Syntax and Command Opcodes
 
-The micro interface for this is serial, and the desktop interface
-is a line based text input.
+The user-interaction interface for this is serial, and the desktop
+interface is a line based text input.
 
 	(Line Number) (Opcode) (Optional Operands)
 
-	Line number is an immediate numerical digit.
+	Line number is an immediate integer base-10 numerical digit.
 	Opcode is two uppercase letters
 	Operands are lowercase letters for variables
-	Operands are digits for immediate numbers
+	Operands are integer base-10 digits for immediate numbers
 	Operands of multiple digits can be separated with a comma
 	Operands of string type start with a double quote to another dquote 
 
-10 REM fibonacci sequence
-20 LET a = 1
-30 LET b = 1
-35 FOR z = 0 TO 20
-40 LET c = a + b
-45 PRINT a ; " " ;
-50 LET a = b
-60 LET b = c
-70 NEXT z
+	Here's an example program in BASIC:
 
-	Example (Fib.blb)
-	10LDa1			; LET a = 1
-	20 LD b 2		; LET b = 1
-	30 LD g 0		; LET g = 0
-	40 M+ c a b		; LET c = a + b
-	40 M+cab		; LET  c = a + b
-	50 PLa			; PRINT A
-	60 PL" "		; PRINT " "
-	70 LD ab		; LET a = b
-	80 LD bc		; LET b = c
-	90 MI g			; LET g = g + 1
-	90 M+ g g 1		; LET g = g + 1
-	100 JL g 20 40		; Jump if g is less than 20 to 40
+	    10 REM fibonacci sequence
+	    20 LET a = 1
+	    30 LET b = 1
+	    40 FOR z = 0 TO 20
+	    50 LET c = a + b
+	    60 PRINT a ; " " ;
+	    70 LET a = b
+	    80 LET b = c
+	    90 NEXT z
+	    100 END
+
+	And here's the equivalent in BLuB:
+
+	    Code                Explanation
+	    10LEa1		; LET a = 1
+	    20 LE b 2		; LET b = 1
+	    30 LE g 0		; LET g = 0
+	    40 M+ c a b		; LET c = a + b
+	    40 M+cab		; LET  c = a + b
+	    50 PPa		; PRINT A
+	    60 PP" "		; PRINT " "
+	    70 LE ab		; LET a = b
+	    80 LE bc		; LET b = c
+	    90 MI g		; LET g = g + 1
+	    100 G< 40 g 20	; IF (G < 20 ) GOTO 40
+	    110 EN
 	
-
-The operations are a mix between BASIC and a sort-of Assembler
-
 There are 26 variables, indicated by lowercase letters.
 Some varialbes are preset with values at the beginning of runtime.
-These are the only ones guaranteed to be set.
 	t = 255
 	f = 0
 	z = 0
 	h = 128
 
-Commands:
+The remaining variables are initialized to '0' at start of runtime.
+
+--
+
+## Interface Commands:
 	mem	display amount of free space in RAM and EEPROM
 	help	display a list of commands and version information
 
@@ -91,8 +106,8 @@ Commands:
 	esave	save the program from memory to EEPROM
 
 
+## Program Opcodes:
 
-Line Operations
     System
 	RE			REM - add a comment
 	EN			END - end runtime
