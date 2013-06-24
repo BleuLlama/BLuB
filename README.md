@@ -49,37 +49,7 @@ interface is a line based text input.
 - Operands of multiple digits can be separated with a comma
 - Operands of string type start with a double quote to another dquote 
 
-
-## Example BASIC program (fibonacci sequence)
-
-	    10 REM fibonacci sequence
-	    20 LET a = 1
-	    30 LET b = 1
-	    40 FOR z = 0 TO 20
-	    50 LET c = a + b
-	    60 PRINT a ; " " ;
-	    70 LET a = b
-	    80 LET b = c
-	    90 NEXT z
-	    100 END
-
-
-## Same example in BLuB
-
-	    Code                Explanation
-	    10 RE Fibonacci Sequence
-	    20LEa1		; LET a = 1
-	    30 LE b 2		; LET b = 1
-	    40 LE g 0		; LET g = 0
-	    50 M+cab		; LET  c = a + b
-	    60 PPa		; PRINT A
-	    70 PP" "		; PRINT " "
-	    80 LE ab		; LET a = b
-	    90 LE bc		; LET b = c
-	    100 MI g		; LET g = g + 1
-	    110 G< 40 g 20	; IF (G < 20 ) GOTO 40
-	    120 EN
-	
+        
 
 # Variables
 
@@ -95,76 +65,115 @@ The remaining variables are initialized to '0' at start of runtime.
 
 
 # Interface Commands
-	mem	display amount of free space in RAM and EEPROM
-	help	display a list of commands and version information
 
-	new 	clear program memory, initialize variables
-	list	display the program loaded into memory
+These commands are typed in at the BLuB prompt by the user
 
-	run	run the program in memory
-	tron	turn program runtime trace on
-	troff	turn program runtime trace off
+- mem - display amount of free space in RAM and EEPROM
+- help - display a list of commands and version information
 
-	enew	clear EEPROM
-	elist	display the program stored in EEPROM
-	eload	load the program from EEPROM to memory
-	esave	save the program from memory to EEPROM
+- new - clear program memory, initialize variables
+- list - display the program loaded into memory
+
+- run - run the program in memory
+- tron - turn program runtime trace on
+- troff - turn program runtime trace off
+
+- enew - clear EEPROM
+- elist - display the program stored in EEPROM
+- eload - load the program from EEPROM to memory
+- esave - save the program from memory to EEPROM
 
 
 # Program Opcodes
 
     System
-	RE			REM - add a comment
-	EN			END - end runtime
+        RE                  REM - add a comment
+        EN                  END - end runtime
 
     Text IO
-	PP  (P)			PRINT ; - print a parameter or string
-	PL  (P)			PRINT   - output a parameter or string (newline)
+        PP  (P)             PRINT ; - print a parameter or string
+        PL  (P)             PRINT   - output a parameter or string (newline)
 
-	IC  (D)			INCHR - LET D = (newly INPUTTED character)
-	IL  (D)			same as IC, but ingore to end of line.
+        IC  (D)             INCHR - LET D = (newly INPUTTED character)
+        IL  (D)             same as IC, but ingore to end of line.
 
     Variable Assignment
-	LE  (D) (P)		LET D = P
+        LE  (D) (P)         LET D = P
 
     Peek and Poke
-	PE  (D) (A)		LET D = PEEK( A ) - get from RAM
-	PO  (A) (V)		POKE( A, V )      - store V in RAM
-	EE  (D) (A)		LET D = PEEK( A ) - get from EEPROM
-	EO  (A) (V)		POKE( A, V )      - store V in EEPROM
+        PE  (D) (A)         LET D = PEEK( A ) - get from RAM
+        PO  (A) (V)         POKE( A, V )      - store V in RAM
+        EE  (D) (A)         LET D = PEEK( A ) - get from EEPROM
+        EO  (A) (V)         POKE( A, V )      - store V in EEPROM
 
     Math
-	M+  (D) (P) (Q)		LET D = P + Q
-	M-  (D) (P) (Q)		LET D = P - Q
-	M/  (D) (P) (Q)		LET D = P / Q
-	M*  (D) (P) (Q)		LET D = P * Q
+        M+  (D) (P) (Q)     LET D = P + Q
+        M-  (D) (P) (Q)     LET D = P - Q
+        M/  (D) (P) (Q)     LET D = P / Q
+        M*  (D) (P) (Q)     LET D = P * Q
 
-	MI  (D)			LET D = D + 1
-	MD  (D)			LET D = D - 1
+        MI  (D)             LET D = D + 1
+        MD  (D)             LET D = D - 1
 
     Bitwise operations
-	M<  (D)	(P)		LET D = D << P  (left shift)
-	M>  (D)	(P)		LET D = D >> P  (right shift)
-	M&  (D) (P)		LET D = D & P   (bit mask)
-	M|  (D) (P)		LET D = D | P   (bit set)
-	M!  (D)			LET D = ~D      (invert bits)
-	
+        M<  (D) (P)         LET D = D << P  (left shift)
+        M>  (D) (P)         LET D = D >> P  (right shift)
+        M&  (D) (P)         LET D = D & P   (bit mask)
+        M|  (D) (P)         LET D = D | P   (bit set)
+        M!  (D)             LET D = ~D      (invert bits)
+        
     GOTO
-	GO  (D)			GOTO D
-	G<  (D) (P) (Q)		IF ( P > Q ) THEN GOTO D
-	G>  (D) (P) (Q)		IF ( P < Q ) THEN GOTO D
-	G=  (D) (P) (Q)		IF ( P = Q ) THEN GOTO D
+        GO  (D)             GOTO D
+        G<  (D) (P) (Q)     IF ( P > Q ) THEN GOTO D
+        G>  (D) (P) (Q)     IF ( P < Q ) THEN GOTO D
+        G=  (D) (P) (Q)     IF ( P = Q ) THEN GOTO D
 
     GOSUB/CALL
-	CA  (D)			CALL D
-	C<  (D) (P) (Q)		IF ( P > Q ) THEN CALL D
-	C>  (D) (P) (Q)		IF ( P < Q ) THEN CALL D
-	C=  (D) (P) (Q)		IF ( P = Q ) THEN CALL D
-	CR			RETURN
+        CA  (D)             CALL D
+        C<  (D) (P) (Q)     IF ( P > Q ) THEN CALL D
+        C>  (D) (P) (Q)     IF ( P < Q ) THEN CALL D
+        C=  (D) (P) (Q)     IF ( P = Q ) THEN CALL D
+        CR                  RETURN
 
     Digital IO
-	AW  (P) (V)		analog write the value V to pin P
-	DW  (P) (V)		digital write the value V to pin P
-	AR  (D) (P)		analog read the value of pin P to varable D
-	DR  (D) (P)		digital read the value of pin P to varable D
+        AW  (P) (V)         analog write the value V to pin P
+        DW  (P) (V)         digital write the value V to pin P
+        AR  (D) (P)         analog read the value of pin P to varable D
+        DR  (D) (P)         digital read the value of pin P to varable D
 
+
+# Example Programs
+
+## Fibonacci Sequence 
+
+### BASIC version (for comparisons)
+
+            10 REM fibonacci sequence
+            20 LET a = 1
+            30 LET b = 1
+            40 FOR g = 0 TO 20
+            50 LET c = a + b
+            60 PRINT a ; " " ;
+            70 LET a = b
+            80 LET b = c
+            90 NEXT g
+            100 END
+
+
+### BLuB version
+Note that the BLuB verson uses a conditional GOTO instead of the FOR-NEXT
+construct, as there is no FOR-NEXT in BLuB.  I tried to keep the line 
+numbers lined up so that you can easily compare the two code blocks.
+
+            10 RE Fibonacci Sequence
+            20LEa1
+            30 LE b 2
+            40 LE g 0
+            50 M+cab
+            60 PPa
+            61 PP" "
+            70 LE ab
+            80 LE bc
+            90 MI g
+            91 G< 40 g 20
+            100 EN
