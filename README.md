@@ -140,6 +140,11 @@ These commands are typed in at the BLuB prompt by the user
         AR  (D) (P)         analog read the value of pin P to varable D
         DR  (D) (P)         digital read the value of pin P to varable D
 
+    Misc 
+	WA  (D)             WAIT D  (milliseconds)
+	AS  (D) (P)         LET D = ASC( P )
+	RN  (D) (P)         LET D = RND( P )   (0..P)
+        R=  (P)             RANDOMIZE( P )     (set random seed)
 
 # Example Programs
 
@@ -176,3 +181,53 @@ numbers lined up so that you can easily compare the two code blocks.
             90 MI g
             91 G< 50 g 20
             100 EN
+
+
+## Display User Input
+
+Prompt the user for input five times.  'a' is used as the counter.
+The inputted character is stored in 'n' and then ascii-value (atoi) 
+converted into 'm'.
+
+	    10 RE Display user input five times
+	    20 LEa0
+	    30 PP "Loop number " 
+ 	    40 LEba
+	    50 MIb
+	    60 PPb
+	    70 PL " of 5:"
+	    80 PP "Type in a number "
+	    90 ILn
+	    100 PP "You typed ascii code "
+	    110 PLn
+	    120 ASmn
+	    130 PP "This is digit value "
+	    140 PL m
+	    150 MIa
+	    160 G<30a5
+	    170 PL "Done!"
+	    180 EN
+
+
+## Display random numbers, timed
+
+This will display random numbers, with a delay of 1 second between
+
+	    10 RE Display random numbers five times with a delay
+	    20 LEg0
+	    30 R= 42
+	    40 PP "A random number 0..10: " 
+	    50 RN a 10
+	    60 PL a
+	    70 PP "A random number 0..100: " 
+	    80 RN a 100
+	    90 PL a
+	    100 PP "A random number 0..1000: " 
+	    110 RN a 1000
+	    120 PL a
+	    130 PL
+	    140 WA 1000
+	    150 MIg
+	    160 G< 40 g 5
+	    180 PL "Done!"
+	    180 EN

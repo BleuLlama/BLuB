@@ -12,6 +12,7 @@
 // v0.05  2013-June-24  rearranged opcode names, added IC/L
 //			better documentation
 //			added pre-text whitespace elimination
+//			WA, RN, R=, AS
 //
 // v0.04  2013-June-21  cmds: files,load,save then removed. oops
 //			ops	G
@@ -567,6 +568,7 @@ int evaluate_line( char * line )
 	// IL - INCHR (to EOL) - absorb to the end of the line, return first 
 	if(    OpcodeIs( 'I', 'C' )
 	    || OpcodeIs( 'I', 'L' ) ) {
+		Serial.write( "? " );
 		varname = getDestVarname( &line, &next );
 		valueA = Serial.read();
 		storeVariable( varname, valueA, next );
@@ -579,6 +581,57 @@ int evaluate_line( char * line )
 
 		return kJRNextLine;
 	}
+
+	////////////////////////////////////////
+	// Conversion Functions
+
+	// AS - ASC() - convert ascii value to integer (atoi)
+	if( OpcodeIs( 'A', 'S' )) {
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		if( valueA >= '0' || valueA <= '9' ) {
+			valueA = valueA - '0';
+		}
+		else if( valueA >= 'a' && valueA <= 'z' ) {
+			valueA = 10 + (valueA - 'a');
+		}
+		else if( valueA >= 'A' && valueA <= 'Z' ) {
+			valueA = 10 + (valueA - 'A');
+		} else {
+			valueA = 0;
+		}
+		storeVariable( varname, valueA, next );
+		return next;
+	}
+
+
+
+	////////////////////////////////////////
+	// Misc?
+
+	// WA - WAIT - waits for the specified milliseconds (1000 = 1s)
+	if( OpcodeIs( 'W', 'A' )) {
+		valueA = getParamValue( &line, &next );
+		delay( valueA );
+		return next;
+	}
+
+	// RN - LET D = RND( P ) - get a random number
+	if( OpcodeIs( 'R', 'N' )) {
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		valueB = random( valueA );
+		storeVariable( varname, valueB, next );
+		return next;
+	}
+
+	// R= - RANDOMIZE( A ) - set the random seed
+	if( OpcodeIs( 'R', '=' )) {
+		valueA = getParamValue( &line, &next );
+		randomSeed( valueA );
+		return next;
+	}
+	
 
 
 	////////////////////////////////////////
