@@ -64,20 +64,17 @@ Some variables are preset with values at the beginning of runtime.
 The remaining variables are initialized to '0' at start of runtime.
 
 
-# Interface Commands
+# nterface Commands
 
 These commands are typed in at the BLuB prompt by the user
 
 - mem - display amount of free space in RAM and EEPROM
 - help - display a list of commands and version information
-
 - new - clear program memory, initialize variables
 - list - display the program loaded into memory
-
 - run - run the program in memory
 - tron - turn program runtime trace on
 - troff - turn program runtime trace off
-
 - enew - clear EEPROM
 - elist - display the program stored in EEPROM
 - eload - load the program from EEPROM to memory
@@ -85,6 +82,8 @@ These commands are typed in at the BLuB prompt by the user
 
 
 # Program Opcodes
+
+        BLuB Opcode         Definition using BASIC syntax
 
     System
         RE                  REM - add a comment
@@ -128,7 +127,7 @@ These commands are typed in at the BLuB prompt by the user
         G>  (D) (P) (Q)     IF ( P < Q ) THEN GOTO D
         G=  (D) (P) (Q)     IF ( P = Q ) THEN GOTO D
 
-    GOSUB/CALL
+    GOSUB/CALL                ** NOTE: Unimplemented **
         CA  (D)             CALL D
         C<  (D) (P) (Q)     IF ( P > Q ) THEN CALL D
         C>  (D) (P) (Q)     IF ( P < Q ) THEN CALL D
@@ -175,5 +174,5 @@ numbers lined up so that you can easily compare the two code blocks.
             70 LE ab
             80 LE bc
             90 MI g
-            91 G< 40 g 20
+            91 G< 50 g 20
             100 EN

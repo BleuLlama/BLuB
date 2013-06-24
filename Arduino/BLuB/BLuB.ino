@@ -10,6 +10,8 @@
 #define kBLuBVersion	"v0.05  2013-June-24  yorgle@gmail.com"
 
 // v0.05  2013-June-24  rearranged opcode names, added IC/L
+//			better documentation
+//			added pre-text whitespace elimination
 //
 // v0.04  2013-June-21  cmds: files,load,save then removed. oops
 //			ops	G
@@ -1058,38 +1060,40 @@ void loop()
 	// get a line of input
 	getSerialLine( linebuf, kLineLen, false );
 
-	// process it
-	if( !strcmp( linebuf, "mem" )) { cmd_mem(); }
+	bptr = linebuf;
+	SKIP_WHITESPACE( bptr );
 
-	else if( !strcmp( linebuf, "new" )) { cmd_new(); }
-	else if( !strcmp( linebuf, "list" )) { cmd_list(); }
-	else if( !strcmp( linebuf, "vars" )) { cmd_vars(); }
-	else if( !strcmp( linebuf, "help" )) { cmd_help(); }
+	// process it
+	if( !strcmp( bptr, "mem" )) { cmd_mem(); }
+
+	else if( !strcmp( bptr, "new" )) { cmd_new(); }
+	else if( !strcmp( bptr, "list" )) { cmd_list(); }
+	else if( !strcmp( bptr, "vars" )) { cmd_vars(); }
+	else if( !strcmp( bptr, "help" )) { cmd_help(); }
 
 #ifdef DESKTOP_NEVER
-	else if( !strcmp( linebuf, "files" )) { cmd_files(); }
-	else if( !strcmp( linebuf, "load" )) { cmd_load(); }
-	else if( !strcmp( linebuf, "save" )) { cmd_save(); }
+	else if( !strcmp( bptr, "files" )) { cmd_files(); }
+	else if( !strcmp( bptr, "load" )) { cmd_load(); }
+	else if( !strcmp( bptr, "save" )) { cmd_save(); }
 #endif
 
-	else if( !strcmp( linebuf, "enew" )) { cmd_enew(); }
-	else if( !strcmp( linebuf, "elist" )) { cmd_elist(); }
-	else if( !strcmp( linebuf, "eload" )) { cmd_eload(); }
-	else if( !strcmp( linebuf, "esave" )) { cmd_esave(); }
+	else if( !strcmp( bptr, "enew" )) { cmd_enew(); }
+	else if( !strcmp( bptr, "elist" )) { cmd_elist(); }
+	else if( !strcmp( bptr, "eload" )) { cmd_eload(); }
+	else if( !strcmp( bptr, "esave" )) { cmd_esave(); }
 
-	else if( !strcmp( linebuf, "tron" )) { 
+	else if( !strcmp( bptr, "tron" )) { 
 		Serial.println( "Trace on." );
 		trace = true;
 	}
-	else if( !strcmp( linebuf, "troff" )) {
+	else if( !strcmp( bptr, "troff" )) {
 		Serial.println( "Trace off." );
 		trace = false;
 	}
-	else if( !strcmp( linebuf, "run" )) { cmd_run(); }
+	else if( !strcmp( bptr, "run" )) { cmd_run(); }
 
-	else if( linebuf[0] >= '0' && linebuf[0] <= '9' ) {
+	else if( bptr[0] >= '0' && bptr[0] <= '9' ) {
 		// it's starting with a number
-		bptr = linebuf;
 
 		// get the line number
 		int v = myAtoi( bptr );
@@ -1108,7 +1112,10 @@ void loop()
 			cmd_removeLine( v, true );	// just remove it
 		} else {
 			cmd_removeLine( v, false );	// remove it first
-			cmd_insertLine( linebuf );
+			// handling for pre-whitespace
+			bptr = linebuf;
+			SKIP_WHITESPACE( bptr );
+			cmd_insertLine( bptr );
 		}
 
 	}
