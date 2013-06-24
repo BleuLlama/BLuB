@@ -9,6 +9,9 @@
 
 #define kBLuBVersion	"v0.03  2013-June-21  yorgle@gmail.com"
 
+// v0.04  2013-June-21  cmds: files,load,save then removed. oops
+//			ops	G
+//
 // v0.03  2013-June-21  ops:	all but Gosubs
 //			pointer bugfixes
 //
@@ -53,7 +56,11 @@ int eeFree = 0;
 
 bool trace = false;
 
+#define kNGosubs (15)
+char gosubPtr = 0;
+char * gosubStack[ kNGosubs ];
 
+#define kJRGosubStack	(-6)
 #define kJRDBZError	(-5)
 #define kJRSyntaxError	(-4)
 #define kJRStop		(-3)
@@ -164,6 +171,9 @@ void cmd_help( void )
 	//                   ------- ------- ------- ------- -------
 	Serial.println( "    help    mem     vars    new     list" );
 	Serial.println( "    run     tron    troff" );
+#ifdef DESKTOP
+	Serial.println( "    files   load    save" );
+#endif
 	Serial.println( "    elist   eload   esave   enew" );
 	//                   ------- ------- ------- ------- -------
 }
@@ -260,6 +270,64 @@ void cmd_esave( void )
 	Serial.println( " bytes saved to EEPROM." );
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+#ifdef DESKTOP_NEVER
+// a few commands for desktop use.
+
+#include <dirent.h>
+
+#define kProgramFolder	"programs"
+
+void cmd_files( void )
+{
+	DIR * drp = NULL;
+	struct dirent * dent = NULL;
+	int count = 0;
+
+	drp = opendir( kProgramFolder );
+	if( !drp ) {
+		Serial.print( kProgramFolder );
+		Serial.println( ": Unable to read folder." );
+		return;
+	}
+
+	Serial.println( "" );
+	
+	while( ((dent = readdir( drp )) != NULL ) )
+	{
+		if( dent->d_type != DT_DIR ) {
+			Serial.print( "    " );
+			Serial.println( dent->d_name );
+			count++;
+		}
+	}
+	closedir( drp );
+
+	if( count != 0 ) Serial.println( "" );
+
+	Serial.print( (long) count, DEC );
+	if( count == 1 ) 
+		Serial.println( " files found." );
+	else
+		Serial.println( " file found." );
+}
+
+void cmd_load( void )
+{
+	char fname[ 64 ]
+}
+
+void cmd_save( void )
+{
+}
+
+
+
+
+
+#endif
+////////////////////////////////////////////////////////////////////////////////
 #define VarCharToIndex( A )\
 		( (A) - 'a' )
 
@@ -610,6 +678,15 @@ int evaluate_line( char * line )
 	if( OpcodeIs( 'G', 'S' )) {
 		return next;
 	}
+
+#ifdef DOGOSUB
+/*
+#define kNGosubs (15)
+char gosubPtr = 0;
+char * gosubStack[ kNGosubs ];
+if( next == kJRGosubStack ) {
+*/
+
 	if( OpcodeIs( 'G', 'L' )) {
 		return next;
 	}
@@ -620,8 +697,14 @@ int evaluate_line( char * line )
 		return next;
 	}
 	if( OpcodeIs( 'R', 'T' )) {
+		if( gosubPtr <= 0 ) {
+			return kJRGosubStack;
+		} else {
+		gosubPtr--;
+		
 		return next;
 	}
+#endif
 
 	// Digital IO  analog/digital write/read
 	if( OpcodeIs( 'A', 'W' )) { // AnalogWrite PORT VALUE
@@ -659,6 +742,7 @@ void cmd_run( void )
 	int next = kJRFirstLine;
 	char *bufc = programRam;
 
+	gosubPtr = 0;
 	if( *bufc == '\0' ) return;
 
 	while( *bufc && next != kJRStop ) {
@@ -715,6 +799,10 @@ void cmd_run( void )
 		// do the thing!
 		cline = myAtoi( bufc );
 		next = evaluate_line( ln );
+		if( next == kJRGosubStack ) {
+			Serial.println( "Gosub stack error." );
+			next = kJRStop;
+		}
 		if( next == kJRDBZError ) {
 			Serial.println( "Divide By Zero Error." );
 			next = kJRStop;
@@ -878,6 +966,12 @@ void loop()
 	else if( !strcmp( linebuf, "list" )) { cmd_list(); }
 	else if( !strcmp( linebuf, "vars" )) { cmd_vars(); }
 	else if( !strcmp( linebuf, "help" )) { cmd_help(); }
+
+#ifdef DESKTOP_NEVER
+	else if( !strcmp( linebuf, "files" )) { cmd_files(); }
+	else if( !strcmp( linebuf, "load" )) { cmd_load(); }
+	else if( !strcmp( linebuf, "save" )) { cmd_save(); }
+#endif
 
 	else if( !strcmp( linebuf, "enew" )) { cmd_enew(); }
 	else if( !strcmp( linebuf, "elist" )) { cmd_elist(); }
