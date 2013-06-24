@@ -12,7 +12,7 @@
 // v0.05  2013-June-24  rearranged opcode names, added IC/L
 //			better documentation
 //			added pre-text whitespace elimination
-//			WA, RN, R=, AS
+//			WA, RN, RA, AS
 //
 // v0.04  2013-June-21  cmds: files,load,save then removed. oops
 //			ops	G
@@ -62,7 +62,7 @@ int eeFree = 0;
 bool trace = false;
 
 #define kNGosubs (15)
-char gosubPtr = 0;
+char gosubLevel = 0;
 char * gosubStack[ kNGosubs ];
 
 #define kJRGosubStack	(-6)
@@ -495,8 +495,20 @@ int getParamValue( char ** line, int * next )
 	return 0;
 }
 
+void doCall( int newLine, char **bufc, int * next )
+{
+	if( *next == kJRSyntaxError ) return;
 
-int evaluate_line( char * line )
+	if( gosubLevel < kNGosubs ) {
+		*next = newLine;
+		gosubStack[ gosubLevel ] = *bufc;
+		gosubLevel++;
+	} else {
+		*next = kJRGosubStack;
+	}
+}
+
+int evaluate_line( char * line, char **bufc )
 {
 	int len = 0;
 	char * buf = line;
@@ -535,9 +547,9 @@ int evaluate_line( char * line )
 	////////////////////////////////////////
 	// USER IO
 
-	// PP - PRINT ; - print out a variable, parameter or string
+	// PR - PRINT ; - print out a variable, parameter or string
 	// PL - PRINT - print out a variable, parameter or string, with newline
-	if(    OpcodeIs( 'P', 'P' )
+	if(    OpcodeIs( 'P', 'R' )
 	    || OpcodeIs( 'P', 'L' ) ) {
 
 		if( *line == '\0' || *line == '\n' ) {
@@ -625,8 +637,8 @@ int evaluate_line( char * line )
 		return next;
 	}
 
-	// R= - RANDOMIZE( A ) - set the random seed
-	if( OpcodeIs( 'R', '=' )) {
+	// RA - RANDOMIZE( A ) - set the random seed
+	if( OpcodeIs( 'R', 'A' )) {
 		valueA = getParamValue( &line, &next );
 		randomSeed( valueA );
 		return next;
@@ -811,45 +823,59 @@ int evaluate_line( char * line )
 		return next;
 	}
 
-#ifdef DOGOSUB
-	// CS - GOSUB - CALL subroutine A
+	// CA - GOSUB - CALL subroutine A
 	if( OpcodeIs( 'C', 'A' )) {
-
-/*
-#define kNGosubs (15)
-char gosubPtr = 0;
-char * gosubStack[ kNGosubs ];
-if( next == kJRGosubStack ) {
-*/
+		valueA = getParamValue( &line, &next );
+		doCall( valueA, bufc, &next );
 
 		return next;
 	}
 
 	// C< - IF ( B < C ) GOSUB A - conditional less-than GOSUB
 	if( OpcodeIs( 'C', '<' )) {
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		valueC = getParamValue( &line, &next );
+		if( valueB < valueC ) {
+			doCall( valueA, bufc, &next );
+		}
 		return next;
 	}
 
 	// C> - IF ( B > C ) GOSUB A - conditional greater-than GOSUB
 	if( OpcodeIs( 'C', '>' )) {
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		valueC = getParamValue( &line, &next );
+		if( valueB > valueC ) {
+			doCall( valueA, bufc, &next );
+		}
 		return next;
 	}
 
 	// C= - IF ( B = C ) GOSUB A - conditional equality GOSUB
-	if( OpcodeIs( 'C', 'E' )) {
+	if( OpcodeIs( 'C', '=' )) {
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		valueC = getParamValue( &line, &next );
+		if( valueB == valueC ) {
+			doCall( valueA, bufc, &next );
+		}
 		return next;
 	}
 
 	// CR - CALL-RETURN - return from a subroutine
 	if( OpcodeIs( 'C', 'R' )) {
-		if( gosubPtr <= 0 ) {
+		if( gosubLevel <= 0 ) {
 			return kJRGosubStack;
-		} else {
-		gosubPtr--;
-		
+		} 
+		gosubLevel--;
+		*bufc = gosubStack[gosubLevel];
+		gosubStack[gosubLevel] = NULL;
+		next = kJRNextLine; // force this.
+
 		return next;
 	}
-#endif
 
 	////////////////////////////////////////
 	// Digital IO  analog/digital write/read
@@ -896,7 +922,7 @@ void cmd_run( void )
 	int next = kJRFirstLine;
 	char *bufc = programRam;
 
-	gosubPtr = 0;
+	gosubLevel = 0;
 	if( *bufc == '\0' ) return;
 
 	while( *bufc && next != kJRStop ) {
@@ -936,6 +962,10 @@ void cmd_run( void )
 
 		// trace output
 		if( trace ) {
+			Serial.print( "Gosub Stack: " );
+			Serial.print( (long) gosubLevel, DEC );
+			Serial.println( " items." );
+
 			Serial.print( "Line: " );
 			char * tc = bufc;
 			while( (*tc) != '\0' && (*tc) != '\n' ) {
@@ -952,7 +982,9 @@ void cmd_run( void )
 
 		// do the thing!
 		cline = myAtoi( bufc );
-		next = evaluate_line( ln );
+
+		next = evaluate_line( ln, &bufc );
+
 		if( next == kJRGosubStack ) {
 			Serial.println( "Gosub stack error." );
 			next = kJRStop;

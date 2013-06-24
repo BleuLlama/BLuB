@@ -64,7 +64,7 @@ Some variables are preset with values at the beginning of runtime.
 The remaining variables are initialized to '0' at start of runtime.
 
 
-# nterface Commands
+# Interface Commands
 
 These commands are typed in at the BLuB prompt by the user
 
@@ -90,7 +90,7 @@ These commands are typed in at the BLuB prompt by the user
         EN                  END - end runtime
 
     Text IO
-        PP  (P)             PRINT ; - print a parameter or string
+        PR  (P)             PRINT ; - print a parameter or string
         PL  (P)             PRINT   - output a parameter or string (newline)
 
         IC  (D)             INCHR - LET D = (newly INPUTTED character)
@@ -127,7 +127,7 @@ These commands are typed in at the BLuB prompt by the user
         G>  (D) (P) (Q)     IF ( P < Q ) THEN GOTO D
         G=  (D) (P) (Q)     IF ( P = Q ) THEN GOTO D
 
-    GOSUB/CALL                ** NOTE: Unimplemented **
+    GOSUB/CALL
         CA  (D)             CALL D
         C<  (D) (P) (Q)     IF ( P > Q ) THEN CALL D
         C>  (D) (P) (Q)     IF ( P < Q ) THEN CALL D
@@ -144,7 +144,7 @@ These commands are typed in at the BLuB prompt by the user
 	WA  (D)             WAIT D  (milliseconds)
 	AS  (D) (P)         LET D = ASC( P )
 	RN  (D) (P)         LET D = RND( P )   (0..P)
-        R=  (P)             RANDOMIZE( P )     (set random seed)
+        RA  (P)             RANDOMIZE( P )     (set random seed)
 
 # Example Programs
 
@@ -174,8 +174,8 @@ numbers lined up so that you can easily compare the two code blocks.
             30 LE b 2
             40 LE g 0
             50 M+cab
-            60 PPa
-            61 PP" "
+            60 PRa
+            61 PR" "
             70 LE ab
             80 LE bc
             90 MI g
@@ -191,17 +191,17 @@ converted into 'm'.
 
 	    10 RE Display user input five times
 	    20 LEa0
-	    30 PP "Loop number " 
+	    30 PR "Loop number " 
  	    40 LEba
 	    50 MIb
-	    60 PPb
+	    60 PRb
 	    70 PL " of 5:"
-	    80 PP "Type in a number "
+	    80 PR "Type in a number "
 	    90 ILn
-	    100 PP "You typed ascii code "
+	    100 PR "You typed ascii code "
 	    110 PLn
 	    120 ASmn
-	    130 PP "This is digit value "
+	    130 PR "This is digit value "
 	    140 PL m
 	    150 MIa
 	    160 G<30a5
@@ -215,14 +215,14 @@ This will display random numbers, with a delay of 1 second between
 
 	    10 RE Display random numbers five times with a delay
 	    20 LEg0
-	    30 R= 42
-	    40 PP "A random number 0..10: " 
+	    30 RA 42
+	    40 PR "A random number 0..10: " 
 	    50 RN a 10
 	    60 PL a
-	    70 PP "A random number 0..100: " 
+	    70 PR "A random number 0..100: " 
 	    80 RN a 100
 	    90 PL a
-	    100 PP "A random number 0..1000: " 
+	    100 PR "A random number 0..1000: " 
 	    110 RN a 1000
 	    120 PL a
 	    130 PL
@@ -231,3 +231,109 @@ This will display random numbers, with a delay of 1 second between
 	    160 G< 40 g 5
 	    180 PL "Done!"
 	    180 EN
+
+And here's an updated version of it that uses CAll (GOSUB) routines to 
+consolidate some redundancy:
+
+	    10 RE Display random numbers five times with a delay
+	    20 LEg0
+	    30 RA 42
+
+	    40 LE b 10
+	    50 CA 2000
+
+	    60 LE b 100
+	    70 CA 2000
+
+	    80 LE b 1000
+	    90 CA 2000
+
+	    100 WA 1000
+	    110 MIg
+	    120 G< 40 g 5
+	    130 PL "Done!"
+	    140 EN
+
+	    2000 RE Sub: display a random number from 0..(b)
+	    2010 PR "A random number 0.." 
+	    2020 PR b
+	    2030 PR ": "
+	    2040 RN a b
+	    2050 PL a
+	    2060 CR
+
+## CAll/GOSUB example
+
+Just a little to show how CAlls can be done
+
+
+	10 RE Call examples
+
+	20 LE a8
+	30 PR "Value "
+	40 PR a
+	60 C< 1000 a 10
+	70 C> 2000 a 10
+	80 C= 3000 a 10
+
+	100 MI a
+	110 G< 30 a13
+	120 PL
+	130 GO 5000
+	
+	1000 PL " is less than 10"
+	1010 CR
+
+	2000 PL " is greater than 10"
+	2010 CR
+
+	3000 PL " is, in fact, 10"
+	3010 CR
+	
+	5000 RE do conditionals different this time
+	5020 LE a8
+
+	5030 PR "Value " 
+	5040 PR a
+	5050 CA 8000
+	5060 CA 6000
+	5070 CA 7000
+
+	5100 MI a
+	5110 G< 5030 a 13
+	5120 PL "Done."
+	5130 EN
+
+	6000 G< 6020 a 10
+	6010 CR
+	6020 PL " is less than 10"
+	6040 CR
+
+	7000 G> 7020 a 10
+	7010 CR
+	7020 PL " is greater than 10"
+	7040 CR
+
+	8000 G= 8020 a 10
+	8010 CR
+	8020 PL " is in fact than 10"
+	8040 CR
+
+	
+
+
+
+## Depleat the Call stack
+
+This one is fun to do on various BASIC implementations.  It basically
+recursively calls itself, depleating the number of times a GOSUB
+can call itself.  Here's our version of it:
+
+	    10 RE Depleat the CAll stack
+	    10 LEa0
+	    20 PR "Call stack level "
+	    30 PLa
+	    40 MIa
+	    50 CA20
+
+
