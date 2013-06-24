@@ -64,7 +64,7 @@ interface is a line based text input.
 	    100 END
 
 
-## Same example in BLuB:
+## Same example in BLuB
 
 	    Code                Explanation
 	    10 RE Fibonacci Sequence
@@ -92,9 +92,8 @@ Some varialbes are preset with values at the beginning of runtime.
 
 The remaining variables are initialized to '0' at start of runtime.
 
---
 
-# Interface Commands:
+# Interface Commands
 	mem	display amount of free space in RAM and EEPROM
 	help	display a list of commands and version information
 
@@ -111,7 +110,7 @@ The remaining variables are initialized to '0' at start of runtime.
 	esave	save the program from memory to EEPROM
 
 
-# Program Opcodes:
+# Program Opcodes
 
     System
 	RE			REM - add a comment
