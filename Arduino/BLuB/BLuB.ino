@@ -10,6 +10,7 @@
 #define kBLuBVersion	"v0.07  2013-June-25  yorgle@gmail.com"
 
 // v0.07  2013-June-25  PEek, POke, for RAM and EEPROM implemented
+//			auto-pinMode()
 //
 // v0.06  2013-June-24  Fixes for Arduino-builds
 //			PROGMEM for low memory usage (ATMega 168)
@@ -1041,6 +1042,7 @@ int evaluate_line( char * line, char **bufc )
 	if( OpcodeIs( 'A', 'W' )) {
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
+		pinMode( valueA, OUTPUT );
 		analogWrite( valueA, valueB );
 		return next;
 	}
@@ -1049,6 +1051,7 @@ int evaluate_line( char * line, char **bufc )
 	if( OpcodeIs( 'D', 'W' )) {
 		valueA = getParamValue( &line, &next );
 		valueB = getParamValue( &line, &next );
+		pinMode( valueA, OUTPUT );
 		digitalWrite( valueA, (valueB==0)?LOW:HIGH );
 		return next;
 	}
@@ -1057,6 +1060,7 @@ int evaluate_line( char * line, char **bufc )
 	if( OpcodeIs( 'A', 'R' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
+		pinMode( valueA, INPUT );
 		storeVariable( varname, analogRead( valueA ), next );
 		return next;
 	}
@@ -1065,6 +1069,7 @@ int evaluate_line( char * line, char **bufc )
 	if( OpcodeIs( 'D', 'R' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
+		pinMode( valueA, INPUT );
 		storeVariable( varname, digitalRead( valueA ), next );
 		return next;
 	}
