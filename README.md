@@ -427,5 +427,19 @@ Here are some examples using IF statements
 	60 EN
 
 
-	
-
+## Blink the LED (pin 8)
+	10 RE Blink the LED a bit
+	20 LEw200
+	30 CA1000
+	40 LEw400
+	50 CA1000
+	60 PL "Done!"
+	70 EN
+	1000 LEg0
+	1010 DW8,0
+	1020 WAw
+	1030 DW8,1
+	1040 WAw
+	1050 MIg
+	1060 IF G < 5 GO 1010
+	1070 CR
