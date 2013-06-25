@@ -7,8 +7,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v0.05  2013-June-24  yorgle@gmail.com"
+#define kBLuBVersion	"v0.06  2013-June-24  yorgle@gmail.com"
 
+// v0.06  2013-June-24  Fixes for Arduino-builds
+//			PROGMEM for low memory usage (ATMega 168)
+//			Opcode parsing: uppercase are skipped, eg PR or PRINT are OK
+//
 // v0.05  2013-June-24  rearranged opcode names, added IC/L
 //			better documentation
 //			added pre-text whitespace elimination
@@ -41,44 +45,82 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef DESKTOP
+// Desktop-based includes
 #include "ardsim.h"		// all of the arduino simulation libraries
 
-#else
+// Desktop defines
+#undef kLocalEcho
+#define kRamSize (RAMEND + 1 )
 
-// arduino includes
+#else
+////////////////////////////////////////
+// Arduino includes
 #include <EEPROM.h>  		// EEProm support
 #include <avr/pgmspace.h>	// PGMspace support for strings
+#define kRamSize (RAMEND + 1 )
+
+// Arduino Defines
+#define kLocalEcho (1)
+#define kRamSize ((RAMEND + 1 ) - 920)
+
+// Reclaim more RAM: http://www.adafruit.com/blog/2008/04/17/free-up-some-arduino-sram/
+#endif
+
+////////////////////////////////////////
+// Common
+
+#define kEESize  (E2END + 1 )
+
+char programRam[ kRamSize ];
+
+#define kNVariables (26)
+int variables[ kNVariables ];
+
+// display runtime trace information
+bool trace = false;
+
+// Parameters for CAll/gosub
+#define kNGosubs (8)
+int gosubLevel = 0;
+char * gosubStack[ kNGosubs ];
+
+// Return values for the opcode handlers
+#define kJRGosubStack	(-6)	/* Stack error for CAll */
+#define kJRDBZError	(-5)	/* Divide by Zero error */
+#define kJRSyntaxError	(-4)	/* general syntax erorr */
+#define kJRStop		(-3)	/* runtime should stop */
+#define kJRNextLine	(-2)	/* runtime should advance to the next line (NOERROR) */
+#define kJRFirstLine	(-1)	/* runtime should start at the first line */
+/* note: 0..Positive numbers are line numbers */
+
+////////////////////////////////////////////////////////////////////////////////
+// Support for PROGMEM stuff
+
+#ifdef ARDUINO
+// macros to help in doing the PROGMEM string manipulations and displays
+
+// replace Serial.print("string") with SerialPrint("string")
+#define Serialprint(x) SerialPrint_P(PSTR(x))
+void SerialPrint_P(PGM_P str) {
+  for (uint8_t c; (c = pgm_read_byte(str)); str++) Serial.write(c);
+}
+
+#define Serialprintln( x ) \
+        Serialprint( x ); \
+        Serialprint( "\n" );
+
+#else
+////////////////////////////////////////
+// Not arduino
+#define Serialprint( x )  Serial.print( x )
+#define Serialprintln( x ) Serial.println( x )
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
-#define kRamSize (E2END + 1 )
-#define kEESize  (E2END + 1 )
 
-#define kNVariables (26)
-
-char programRam[ kRamSize ];
-int variables[ kNVariables ];
-
-int ramFree = 0;
-int eeFree = 0;
-
-bool trace = false;
-
-#define kNGosubs (15)
-char gosubLevel = 0;
-char * gosubStack[ kNGosubs ];
-
-#define kJRGosubStack	(-6)
-#define kJRDBZError	(-5)
-#define kJRSyntaxError	(-4)
-#define kJRStop		(-3)
-#define kJRNextLine	(-2)
-#define kJRFirstLine	(-1)
-
-////////////////////////////////////////////////////////////////////////////////
-
-#define kBufLen (16)
+// buffer is used for keyboard input, as well as string manipulation routines
+#define kBufLen (32)
 char buffer[kBufLen];
 
 #define PRINT_LINE( L ) \
@@ -98,6 +140,11 @@ char buffer[kBufLen];
 		|| (*A) == '\t' \
 		|| (*A) == ',' \
 	        ) && (*A) != '\0' ) (A)++; /* parens here are IMPORTANT */
+
+#define SKIP_UPPERCASE( x ) \
+	while(     (*x) >= 'A' \
+		&& (*x) <= 'Z' \
+		&& (*x) != '\0' ) (x)++;
 
 int myAtoi( char * buf )
 {
@@ -138,52 +185,53 @@ int myAtoiP( char ** buf, int * next )
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
 void cmd_mem( void )
 {
-	ramFree = strlen( (const char *)programRam );
-	ramFree +=1;
-	ramFree = kRamSize - ramFree;
+	int rfree = strlen( (const char *)programRam );
+	rfree +=1;
+	rfree = kRamSize - rfree;
 
-	Serial.print( "    " );
-	Serial.print( (long)ramFree, DEC );
-	Serial.print( " of " );
+	Serialprint( "    " );
+	Serial.print( (long)rfree, DEC );
+	Serialprint( " of " );
 	Serial.print( (long)kRamSize, DEC );
-	Serial.println( " bytes free RAM" );
+	Serialprintln( " bytes free RAM" );
 
-	// recompute eeFree
+	// compute EEPROM free space
 	int ch = 'X';
 
 	// figure out how much is used
-	for( eeFree=0 ; (eeFree<=kEESize) && (ch != '\0') ; eeFree++ )
+	for( rfree=0 ; (rfree<=kEESize) && (ch != '\0') ; rfree++ )
 	{
-		ch = EEPROM.read( eeFree );
+		ch = EEPROM.read( rfree );
 		if( ch == '\0' ) continue;
 	}
-	eeFree = kEESize - eeFree; // turn it into free.
+	rfree = kEESize - rfree; // turn it into free.
 
 
-	Serial.print( "    " );
-	Serial.print( (long)eeFree, DEC );
-	Serial.print( " of " );
+	Serialprint( "    " );
+	Serial.print( (long)rfree, DEC );
+	Serialprint( " of " );
 	Serial.print( (long)kEESize, DEC );
-	Serial.println( " bytes free EEProm" );
+	Serialprintln( " bytes free EEProm" );
 }
 
 void cmd_help( void )
 {
-	Serial.println( "BLuB Interface" );
-	Serial.println( kBLuBVersion );
+	Serialprintln( "BLuB Interface" );
+	Serialprintln( kBLuBVersion );
 	cmd_mem();
 
-	Serial.println( "" );
-	Serial.println( "Available commands:" );
+	Serialprintln( "" );
+	Serialprintln( "Available commands:" );
 	//                   ------- ------- ------- ------- -------
-	Serial.println( "    help    mem     vars    new     list" );
-	Serial.println( "    run     tron    troff" );
+	Serialprintln( "    help    mem     vars    new     list" );
+	Serialprintln( "    run     tron    troff" );
 #ifdef DESKTOP
-	Serial.println( "    files   load    save" );
+	Serialprintln( "    files   load    save" );
 #endif
-	Serial.println( "    elist   eload   esave   enew" );
+	Serialprintln( "    elist   eload   esave   enew" );
 	//                   ------- ------- ------- ------- -------
 }
 
@@ -200,13 +248,15 @@ void getSerialLine( char * buf, int maxbuf, boolean echoback )
 {
   int chp = 0;
 
+  
   // read a line or so into our buffer
   do {
+    while( !Serial.available() );
     buf[chp] = Serial.read();
     if( echoback ) Serial.write( buf[chp] );
     chp++;
-  } while(    Serial.available()
-           && buf[chp-1] != '\n'
+  } while(    //Serial.available()
+           buf[chp-1] != '\n'
            && chp < maxbuf );
 
   // terminate the buffer
@@ -215,21 +265,21 @@ void getSerialLine( char * buf, int maxbuf, boolean echoback )
   // strip newline
   if( chp > 0 && buf[ chp-1 ] == '\n' ) buf[chp-1] = '\0';
 
-  if( echoback ) Serial.println( "" );
+  if( echoback ) Serialprint( "\n" );
 }
 
 
 
 void cmd_enew( void )
 {
-	Serial.print( "Clearing EEPROM " );
+	Serialprint( "Clearing EEPROM " );
 	for( int i=0 ; i<kEESize ; i++ )
 	{
 		EEPROM.write( i, 0x00 );
 		//    digitalWrite( kLED, i & 0x020 );
-		if( i%64 == 0 ) Serial.print( "." );
+		if( i%64 == 0 ) Serialprint( "." );
 	}
-	Serial.println( " Done." );
+	Serialprintln( " Done." );
 }
 
 void cmd_elist( void )
@@ -259,7 +309,7 @@ void cmd_eload( void )
 	}
 
 	Serial.print( (long)i, DEC );
-	Serial.println( " bytes loaded from EEPROM." );
+	Serialprintln( " bytes loaded from EEPROM." );
 }
 
 void cmd_esave( void )
@@ -276,7 +326,7 @@ void cmd_esave( void )
 	}
 
 	Serial.print( (long)i, DEC );
-	Serial.println( " bytes saved to EEPROM." );
+	Serialprintln( " bytes saved to EEPROM." );
 }
 
 
@@ -296,8 +346,8 @@ void cmd_files( void )
 
 	drp = opendir( kProgramFolder );
 	if( !drp ) {
-		Serial.print( kProgramFolder );
-		Serial.println( ": Unable to read folder." );
+		Serialprint( kProgramFolder );
+		Serialprintln( ": Unable to read folder." );
 		return;
 	}
 
@@ -361,7 +411,7 @@ void init_vars( void )
 void cmd_vars( void )
 {
 	char buf[20];
-	Serial.println( "Variables:" );
+	Serialprintln( "Variables:" );
 	for( int i=0 ; i<(kNVariables/2) ; i++ )
 	{
 		snprintf( buf, 20, "  %c: %-9d", i+'a', variables[i] );
@@ -385,7 +435,7 @@ void cmd_new( void )
 
 void cmd_list( void )
 {
-	Serial.println( "" );		// newline before
+	Serialprintln( "" );		// newline before
 	Serial.print( programRam );	// dump it all out
 	// no need for println, since program ram ends with newline
 }
@@ -548,6 +598,9 @@ int evaluate_line( char * line, char **bufc )
 	// store the opcode, and increment past it.
 	op0 = *line++;
 	op1 = *line++;
+
+	// skip past any decorative uppercase
+	SKIP_UPPERCASE( line );
 
 	// skip any pre-pended whitespace
 	SKIP_WHITESPACE( line );
@@ -996,7 +1049,7 @@ int evaluate_line( char * line, char **bufc )
 		return next;
 	}
 
-	Serial.println( "Unknown opcode." );
+	Serialprintln( "Unknown opcode." );
 	return kJRStop;
 }
 
@@ -1026,7 +1079,7 @@ void cmd_run( void )
 			bufc = findLine( next );
 			if( *bufc == '\0' ) {
 				Serial.print( (long) next, DEC );
-				Serial.println( ": Line not found." );
+				Serialprintln( ": Line not found." );
 				break;
 			}
 		}
@@ -1046,17 +1099,17 @@ void cmd_run( void )
 
 		// trace output
 		if( trace ) {
-			Serial.print( "Gosub Stack: " );
+			Serialprint( "Gosub Stack: " );
 			Serial.print( (long) gosubLevel, DEC );
-			Serial.println( " items." );
+			Serialprintln( " items." );
 
-			Serial.print( "Line: " );
+			Serialprint( "Line: " );
 			char * tc = bufc;
 			while( (*tc) != '\0' && (*tc) != '\n' ) {
 				Serial.write( (const uint8_t*)tc, 1 );
 				tc++;
 			}
-			Serial.println( "" );
+			Serialprintln( "" );
 
 
 			// get user input (return)
@@ -1070,21 +1123,21 @@ void cmd_run( void )
 		next = evaluate_line( ln, &bufc );
 
 		if( next == kJRGosubStack ) {
-			Serial.println( "Gosub stack error." );
+			Serialprintln( "Gosub stack error." );
 			next = kJRStop;
 		}
 		if( next == kJRDBZError ) {
-			Serial.println( "Divide By Zero Error." );
+			Serialprintln( "Divide By Zero Error." );
 			next = kJRStop;
 		}
 		if( next == kJRSyntaxError ) {
-			Serial.println( "Syntax Error." );
+			Serialprintln( "Syntax Error." );
 			next = kJRStop;
 		}
 	}
 
-	Serial.println( "" );
-	Serial.print( "Stopped at line " );
+	Serialprintln( "" );
+	Serialprint( "Stopped at line " );
 	Serial.println( (long)cline, DEC );
 }
 
@@ -1098,8 +1151,8 @@ void setup()
 		; // wait for Leonardo to catch up
 	}
 
-	Serial.println( "BLuB Interface" );
-	Serial.println( kBLuBVersion );
+	Serialprintln( "BLuB Interface" );
+	Serialprintln( kBLuBVersion );
 	cmd_new();
 	init_vars();
 	cmd_mem();
@@ -1138,7 +1191,7 @@ void cmd_removeLine( int lineNo, bool verbose )
 	}
 
 	if( verbose )
-		Serial.print( "Error: Line not found." );
+		Serialprint( "Error: Line not found." );
 }
 
 void cmd_insertLine( char * theLine )
@@ -1151,7 +1204,7 @@ void cmd_insertLine( char * theLine )
 
 	if( (pgmSz + newSz) >= kRamSize )
 	{
-		Serial.println( "Out of memory!" );
+		Serialprintln( "Out of memory!" );
 		return;
 	}
 
@@ -1228,6 +1281,9 @@ void loop()
 	
 	// get a line of input
 	getSerialLine( linebuf, kLineLen, false );
+#ifdef kLocalEcho
+        Serial.println( linebuf );
+#endif
 
 	bptr = linebuf;
 	SKIP_WHITESPACE( bptr );
