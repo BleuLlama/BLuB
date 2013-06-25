@@ -7,8 +7,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v0.06  2013-June-24  yorgle@gmail.com"
+#define kBLuBVersion	"v0.07  2013-June-25  yorgle@gmail.com"
 
+// v0.07  2013-June-25  PEek, POke, for RAM and EEPROM implemented
+//
 // v0.06  2013-June-24  Fixes for Arduino-builds
 //			PROGMEM for low memory usage (ATMega 168)
 //			Opcode parsing: uppercase are skipped, eg PR or PRINT are OK
@@ -50,18 +52,15 @@
 
 // Desktop defines
 #undef kLocalEcho
-#define kRamSize (RAMEND + 1 )
 
 #else
 ////////////////////////////////////////
 // Arduino includes
 #include <EEPROM.h>  		// EEProm support
 #include <avr/pgmspace.h>	// PGMspace support for strings
-#define kRamSize (RAMEND + 1 )
 
 // Arduino Defines
 #define kLocalEcho (1)
-#define kRamSize ((RAMEND + 1 ) - 920)
 
 // Reclaim more RAM: http://www.adafruit.com/blog/2008/04/17/free-up-some-arduino-sram/
 #endif
@@ -70,6 +69,7 @@
 // Common
 
 #define kEESize  (E2END + 1 )
+#define kRamSize ((RAMEND + 1 ) - 920)
 
 char programRam[ kRamSize ];
 
@@ -229,7 +229,7 @@ void cmd_help( void )
 	Serialprintln( "    help    mem     vars    new     list" );
 	Serialprintln( "    run     tron    troff" );
 #ifdef DESKTOP
-	Serialprintln( "    files   load    save" );
+	Serialprintln( "    exit    files   load    save" );
 #endif
 	Serialprintln( "    elist   eload   esave   enew" );
 	//                   ------- ------- ------- ------- -------
@@ -735,22 +735,42 @@ int evaluate_line( char * line, char **bufc )
 
 	// PE - PEEK - Look in a RAM address
 	if( OpcodeIs( 'P', 'E' )) {
-		return kJRNextLine;
+		// PE (To Var) (address)
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		valueB = programRam[ valueA % kRamSize ];
+		storeVariable( varname, valueB, next );
+		return next;
 	}
 
 	// PO - POKE - Store into a RAM address
 	if( OpcodeIs( 'P', 'O' )) {
-		return kJRNextLine;
+		// PO ( addr ) (value )
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		if( next == kJRNextLine ) {
+			programRam[ valueA % kRamSize ] = valueB;
+		}
+		return next;
 	}
 
 	// EE - PEEK - Look in an EEPROM address
 	if( OpcodeIs( 'E', 'E' )) {
-		return kJRNextLine;
+		varname = getDestVarname( &line, &next );
+		valueA = getParamValue( &line, &next );
+		valueB = EEPROM.read( valueA % kRamSize );
+		storeVariable( varname, valueB, next );
+		return next;
 	}
 
 	// EO - POKE - Store int an EEPROM address
 	if( OpcodeIs( 'E', 'O' )) {
-		return kJRNextLine;
+		valueA = getParamValue( &line, &next );
+		valueB = getParamValue( &line, &next );
+		if( next == kJRNextLine ) {
+			EEPROM.write( valueA, (valueB & 0x0ff) );
+		}
+		return next;
 	}
 
 
@@ -1295,6 +1315,10 @@ void loop()
 	else if( !strcmp( bptr, "list" )) { cmd_list(); }
 	else if( !strcmp( bptr, "vars" )) { cmd_vars(); }
 	else if( !strcmp( bptr, "help" )) { cmd_help(); }
+
+#ifdef DESKTOP
+	else if( !strcmp( bptr, "exit" )) { exit( 0 ); }
+#endif
 
 #ifdef DESKTOP_NEVER
 	else if( !strcmp( bptr, "files" )) { cmd_files(); }

@@ -403,3 +403,29 @@ Here are some examples using IF statements
 
 	1500 PL "Five"
 	1510 CR
+
+
+## PEEK (EEPROM)
+
+	10 RE Dump out first 1kb of EEPROM
+	20 LE a0
+	30 EE ba
+	40 PR b
+	50 PR " "
+	60 MI a
+	70 IF a<1000 GO 20
+	80 PL "Done!"
+	90 EN
+
+## POKE (RAM)
+
+	10 RE Kill this program by nulling out the memory
+	20 LE a0
+	30 LE d0
+	40 PO a,d
+	50 PL "Done!  Try 'list' now!"
+	60 EN
+
+
+	
+
