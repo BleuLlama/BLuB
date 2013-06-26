@@ -132,8 +132,8 @@ These commands are typed in at the BLuB prompt by the user
         IF (P) = (Q) CA (D)  IF P=Q THEN GOSUB D
         IF (P) > (Q) CA (D)  IF P>Q THEN GOSUB D
 
-	ON (P) GO (D)
-	ON (P) CA (D)
+        ON (P) GO (D) ... (D)  P selects a zero-indexed item from the D list
+        ON (P) CA (D) ... (D)
         
     GOTO
         GO  (D)             GOTO D
