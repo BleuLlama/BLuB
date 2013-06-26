@@ -438,14 +438,22 @@ from EEPROM to RAM at startup time automatically.  If the final
 three bytes of the EEPROM are 'B', 'L', 1, (or in decimal, 66, 76, 1)
 then we will run the program also.
 
-You will need to adjust the 4093..4095 numbers to match the EEPROM in your 
-Arduino. The numbers to use here are:
+Here is the program to turn on autorun for ATmega168 and ATmega8
 
-- ATmega168, ATmega8: 509, 510, 511 
-- ATmega328: 1021, 1022, 1023
-- ATmega1280, ATmega2560, Desktop: 4093, 4094, 4095
+	10 EO 509 66
+	20 EO 510 76
+	30 EO 511 1
+	40 EN
 
-And here is the simple program to poke these values into EEPROM
+Here is the program to turn on autorun for ATmega328
+
+	10 EO 1021 66
+	20 EO 1022 76
+	30 EO 1023 1
+	40 EN
+
+And here is the program to turn on autorun for ATmega1280. ATmega2560,
+and for DESKTOP builds:
 
 	10 EO 4093 66
 	20 EO 4094 76
