@@ -422,24 +422,24 @@ Here are some examples using IF statements
 	10 RE Kill this program by nulling out the memory
 	20 LE a0
 	30 LE d0
-	40 PO a,d
+	40 PO a d
 	50 PL "Done!  Try 'list' now!"
 	60 EN
 
 
 ## Blink the LED (pin 8)
 	10 RE Blink the LED a bit
-	20 LEw200
-	30 CA1000
-	40 LEw400
-	50 CA1000
+	20 LE w 200
+	30 CA 1000
+	40 LE w 400
+	50 CA 1000
 	60 PL "Done!"
 	70 EN
-	1000 LEg0
-	1010 DW8,0
-	1020 WAw
-	1030 DW8,1
-	1040 WAw
-	1050 MIg
-	1060 IF G < 5 GO 1010
+	1000 LE g 0
+	1010 DW 8 0
+	1020 WA w
+	1030 DW 8 1
+	1040 WA w
+	1050 MI g
+	1060 IF g < 5 GO 1010
 	1070 CR

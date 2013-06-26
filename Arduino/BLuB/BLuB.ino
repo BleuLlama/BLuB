@@ -1171,7 +1171,7 @@ void cmd_run( void )
 void setup()
 {
 	// set up serial port
-	Serial.begin( 9600 );
+	Serial.begin( 4800 );
 	while( !Serial ) {
 		; // wait for Leonardo to catch up
 	}
