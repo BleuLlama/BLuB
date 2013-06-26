@@ -11,6 +11,7 @@
 
 // v0.07  2013-June-25  PEek, POke, for RAM and EEPROM implemented
 //			auto-pinMode()
+//			4800 baud
 //
 // v0.06  2013-June-24  Fixes for Arduino-builds
 //			PROGMEM for low memory usage (ATMega 168)
