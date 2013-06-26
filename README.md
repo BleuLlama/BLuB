@@ -156,9 +156,9 @@ These commands are typed in at the BLuB prompt by the user
         DR  (D) (P)         digital read the value of pin P to varable D
 
     Misc 
-	WA  (D)             WAIT D  (milliseconds)
-	AS  (D) (P)         LET D = ASC( P )
-	RN  (D) (P)         LET D = RND( P )   (0..P)
+        WA  (D)             WAIT D  (milliseconds)
+        AS  (D) (P)         LET D = ASC( P )
+        RN  (D) (P)         LET D = RND( P )   (0..P)
         RA  (P)             RANDOMIZE( P )     (set random seed)
 
 # Example Programs
