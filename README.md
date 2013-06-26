@@ -383,7 +383,8 @@ Here are some examples using IF statements
 	20 LE g0
 	30 PR "Loop number " 
 	40 PL g
-	50 ON g GO 1000 1100 1200 1300 1400 1500
+	50 ON g CA 1000 1100 1200 1300 1400 1500
+
 	60 MI g
 	70 IF g < 5 GO 30
 	80 PL "Done!" 
@@ -446,3 +447,24 @@ Here are some examples using IF statements
 	1050 MI g
 	1060 IF g < 5 GO 1010
 	1070 CR
+
+## Turn on autorun
+
+This puts three bytes at the end of the EEPROM which trigger us to
+auto-run the program at startup time.  As it is, we load the program
+from EEPROM to RAM at startup time automatically.  If the final
+three bytes of the EEPROM are 'B', 'L', 1, (or in decimal, 66, 76, 1)
+then we will run the program also.
+
+You will need to adjust the 4093..4095 numbers to match the EEPROM in your 
+Arduino. The numbers to use here are:
+
+- ATmega168, ATmega8: 509, 510, 511 
+- ATmega328: 1021, 1022, 1023
+- ATmega1280, ATmega2560, Desktop: 4093, 4094, 4095
+
+	10 EO 4093 66
+	20 EO 4094 76
+	30 EO 4095 1
+	40 EN
+

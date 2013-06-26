@@ -77,3 +77,6 @@ test: $(TARG)
 full: clean
 	make test
 .PHONY: full
+
+install:
+	  cp Arduino/BLuB/BLuB.ino ~/Dropbox/ArduinoSketches/BLuB/BLuB.ino

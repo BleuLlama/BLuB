@@ -7,8 +7,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v0.07  2013-June-25  yorgle@gmail.com"
+#define kBLuBVersion	"v0.08  2013-June-26  yorgle@gmail.com"
 
+// v0.08  2013-June-26  Autoload and Autorun added
+//
 // v0.07  2013-June-25  PEek, POke, for RAM and EEPROM implemented
 //			auto-pinMode()
 //			4800 baud
@@ -66,6 +68,16 @@
 
 // Reclaim more RAM: http://www.adafruit.com/blog/2008/04/17/free-up-some-arduino-sram/
 #endif
+
+
+// Autorun!
+//	to use this, set the following bytes:
+// 		E2END-2 to 'B'
+//		E2END-1 to 'L'
+//		E2END   to 0x01  (autorun flag)
+//	other bits may have future uses.
+
+#define kFlagAutorun (0x01)
 
 ////////////////////////////////////////
 // Common
@@ -1169,6 +1181,42 @@ void cmd_run( void )
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void do_autoload( void )
+{
+	// peek at the first byte of the EEProm
+	int ch = EEPROM.read( 0 );
+
+	if( ch == 0x0ff ) {
+		Serialprintln( "EEPROM is unformatted. 'enew' to format." );
+		return;
+	}
+
+	if( ch == 0x00 ) {
+		Serialprintln( "EEPROM has no program." );
+		return;
+	}
+	cmd_eload();
+}
+
+void do_autorun( void )
+{
+	int ch;
+
+	// check for sentinel
+	ch = EEPROM.read( E2END-2 );
+	if( ch != 'B' ) return;
+	ch = EEPROM.read( E2END-1 );
+	if( ch != 'L' ) return;
+
+
+	// ok. let's check for the autorun flag
+	ch = EEPROM.read( E2END );
+	if( ch & kFlagAutorun )
+		cmd_run();
+}
+
+
+
 void setup()
 {
 	// set up serial port
@@ -1179,9 +1227,14 @@ void setup()
 
 	Serialprintln( "BLuB Interface" );
 	Serialprintln( kBLuBVersion );
+	Serialprintln( "" );
 	cmd_new();
 	init_vars();
+	do_autoload();
+	Serialprintln( "" );
 	cmd_mem();
+	
+	do_autorun();
 } 
 
 
