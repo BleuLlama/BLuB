@@ -430,6 +430,28 @@ Here are some examples using IF statements
 	50 PL "Done!  Try 'list' now!"
 	60 EN
 
+## Turn on autorun (POKE EEPROM)
+
+This puts three bytes at the end of the EEPROM which trigger us to
+auto-run the program at startup time.  As it is, we load the program
+from EEPROM to RAM at startup time automatically.  If the final
+three bytes of the EEPROM are 'B', 'L', 1, (or in decimal, 66, 76, 1)
+then we will run the program also.
+
+You will need to adjust the 4093..4095 numbers to match the EEPROM in your 
+Arduino. The numbers to use here are:
+
+- ATmega168, ATmega8: 509, 510, 511 
+- ATmega328: 1021, 1022, 1023
+- ATmega1280, ATmega2560, Desktop: 4093, 4094, 4095
+
+And here is the simple program to poke these values into EEPROM
+
+	10 EO 4093 66
+	20 EO 4094 76
+	30 EO 4095 1
+	40 EN
+
 
 ## Blink the LED (pin 8)
 	10 RE Blink the LED a bit
@@ -447,24 +469,4 @@ Here are some examples using IF statements
 	1050 MI g
 	1060 IF g < 5 GO 1010
 	1070 CR
-
-## Turn on autorun
-
-This puts three bytes at the end of the EEPROM which trigger us to
-auto-run the program at startup time.  As it is, we load the program
-from EEPROM to RAM at startup time automatically.  If the final
-three bytes of the EEPROM are 'B', 'L', 1, (or in decimal, 66, 76, 1)
-then we will run the program also.
-
-You will need to adjust the 4093..4095 numbers to match the EEPROM in your 
-Arduino. The numbers to use here are:
-
-- ATmega168, ATmega8: 509, 510, 511 
-- ATmega328: 1021, 1022, 1023
-- ATmega1280, ATmega2560, Desktop: 4093, 4094, 4095
-
-	10 EO 4093 66
-	20 EO 4094 76
-	30 EO 4095 1
-	40 EN
 
