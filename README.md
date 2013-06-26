@@ -1,20 +1,21 @@
-BLuBasic
-========
+BLuB
+====
 
-A small variant of a BASIC style language, simplifying the syntax and
-borrowing some concepts from ASM.
+BLuB A small variant of a BASIC style language, simplifying the syntax and
+borrowing some concepts from ASM. "BLuB" originally stood for "BleuLlama's
+micro-BASIC", but now it is just "BLuB".
 
 
 # Overview
 
 The focus of this is not to be accurate to a standard BASIC syntax,
 but instead use BASIC and its ease of use to be inspiration for a
-VERY small programmers shell for use on very low footprint
+small programmers shell for use on very low footprint
 microcontrollers.
 
 The project provides two methods for building it:
 
-1. unixey desktop.  This target is for building it for runtime on a 
+1. Unixey desktop.  This target is for building it for runtime on a 
    desktop machine (Mac OSX, MinGW on Windows, Linux) for use of learning
    or for debugging without a microcontroller.  This is accomplished via
    use of the content in the "ardsim" subdirectory.  This uses C++ 
@@ -23,14 +24,16 @@ The project provides two methods for building it:
 
 2. Arduino source.  This target is for use for building it for use on
    Arduino devices.  Just double-click the .INO file, and it will open 
-   inside of the Arduino IDE.
+   inside of the Arduino IDE. (You may instead need to right-click it to 
+   open it with the Arduino IDE, or copy it to your Arduino sketch folder.)
 
 This does not provide an interface for SD or other storage, and none
 is planned.  This is to keep everything small and self-contained.  It 
 uses RAM for the primary runtime space, and EEPROM for power-off storage.
 
 It is expected that the serial interface will be used to input programs
-to be stored into the EEPROM
+to be stored into the EEPROM, as well as for offline storage via text
+capture of program listings.
 
 
 --
