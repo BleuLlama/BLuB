@@ -10,6 +10,7 @@
 #define kBLuBVersion	"v0.08  2013-June-26  yorgle@gmail.com"
 
 // v0.08  2013-June-26  Autoload and Autorun added
+//			ctrl-c/ctrl-d/Z to break a running program
 //
 // v0.07  2013-June-25  PEek, POke, for RAM and EEPROM implemented
 //			auto-pinMode()
@@ -99,6 +100,7 @@ int gosubLevel = 0;
 char * gosubStack[ kNGosubs ];
 
 // Return values for the opcode handlers
+#define kJRInterrupt    (-7)    /* ctrl-c/break interrupted */
 #define kJRGosubStack	(-6)	/* Stack error for CAll */
 #define kJRDBZError	(-5)	/* Divide by Zero error */
 #define kJRSyntaxError	(-4)	/* general syntax erorr */
@@ -262,7 +264,6 @@ void getSerialLine( char * buf, int maxbuf, boolean echoback )
 {
   int chp = 0;
 
-  
   // read a line or so into our buffer
   do {
     while( !Serial.available() );
@@ -271,13 +272,15 @@ void getSerialLine( char * buf, int maxbuf, boolean echoback )
     chp++;
   } while(    //Serial.available()
            buf[chp-1] != '\n'
+           && buf[chp-1] != '\r'
            && chp < maxbuf );
 
   // terminate the buffer
   buf[chp] = '\0';
 
   // strip newline
-  if( chp > 0 && buf[ chp-1 ] == '\n' ) buf[chp-1] = '\0';
+  if( chp > 0 && ( buf[ chp-1 ] == '\n' || buf[ chp-1 ] == '\r') ) { buf[chp-1] = '\0'; chp--; }
+  if( chp > 0 && ( buf[ chp-1 ] == '\n' || buf[ chp-1 ] == '\r') ) buf[chp-1] = '\0';
 
   if( echoback ) Serialprint( "\n" );
 }
@@ -1160,6 +1163,19 @@ void cmd_run( void )
 
 		next = evaluate_line( ln, &bufc );
 
+                while( Serial.available() > 0 ) {
+                  int ch = Serial.read();
+                  if( ch == 3 || ch == 4 || ch == 90 ) {
+                    // ctrl-c or ctrl-d or 'Z'
+                      next = kJRInterrupt;
+                  }
+                }
+                
+                if( next == kJRInterrupt ) {
+                        Serialprintln( "Interrupt." );
+                        next = kJRStop;
+                }
+
 		if( next == kJRGosubStack ) {
 			Serialprintln( "Gosub stack error." );
 			next = kJRStop;
@@ -1359,9 +1375,10 @@ void loop()
 	Serial.print( ":) " );
 	
 	// get a line of input
-	getSerialLine( linebuf, kLineLen, false );
 #ifdef kLocalEcho
-        Serial.println( linebuf );
+	getSerialLine( linebuf, kLineLen, true );
+#else
+	getSerialLine( linebuf, kLineLen, false );
 #endif
 
 	bptr = linebuf;
