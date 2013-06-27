@@ -7,8 +7,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v0.08  2013-June-26  yorgle@gmail.com"
+#define kBLuBVersion	"v1.00  2013-June-27  yorgle@gmail.com"
 
+// v1.00  2013-June-27  Version bump to 1.0!
+//			pulled out unneeded DESKTOP code.
+//
 // v0.08  2013-June-26  Autoload and Autorun added
 //			ctrl-c/ctrl-d/Z to break a running program
 //
@@ -123,7 +126,7 @@ void SerialPrint_P(PGM_P str) {
 
 #define Serialprintln( x ) \
         Serialprint( x ); \
-        Serialprint( "\n" );
+        Serialprint( "\n" );  /* FUTURE should we be \n\r? */
 
 #else
 ////////////////////////////////////////
@@ -244,9 +247,6 @@ void cmd_help( void )
 	//                   ------- ------- ------- ------- -------
 	Serialprintln( "    help    mem     vars    new     list" );
 	Serialprintln( "    run     tron    troff" );
-#ifdef DESKTOP
-	Serialprintln( "    exit    files   load    save" );
-#endif
 	Serialprintln( "    elist   eload   esave   enew" );
 	//                   ------- ------- ------- ------- -------
 }
@@ -347,62 +347,6 @@ void cmd_esave( void )
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-#ifdef DESKTOP_NEVER
-// a few commands for desktop use.
-
-#include <dirent.h>
-
-#define kProgramFolder	"programs"
-
-void cmd_files( void )
-{
-	DIR * drp = NULL;
-	struct dirent * dent = NULL;
-	int count = 0;
-
-	drp = opendir( kProgramFolder );
-	if( !drp ) {
-		Serialprint( kProgramFolder );
-		Serialprintln( ": Unable to read folder." );
-		return;
-	}
-
-	Serial.println( "" );
-	
-	while( ((dent = readdir( drp )) != NULL ) )
-	{
-		if( dent->d_type != DT_DIR ) {
-			Serial.print( "    " );
-			Serial.println( dent->d_name );
-			count++;
-		}
-	}
-	closedir( drp );
-
-	if( count != 0 ) Serial.println( "" );
-
-	Serial.print( (long) count, DEC );
-	if( count == 1 ) 
-		Serial.println( " files found." );
-	else
-		Serial.println( " file found." );
-}
-
-void cmd_load( void )
-{
-	char fname[ 64 ]
-}
-
-void cmd_save( void )
-{
-}
-
-
-
-
-
-#endif
 ////////////////////////////////////////////////////////////////////////////////
 #define VarCharToIndex( A )\
 		( (A) - 'a' )
@@ -1163,6 +1107,7 @@ void cmd_run( void )
 
 		next = evaluate_line( ln, &bufc );
 
+#ifndef DESKTOP
                 while( Serial.available() > 0 ) {
                   int ch = Serial.read();
                   if( ch == 3 || ch == 4 || ch == 90 ) {
@@ -1170,6 +1115,7 @@ void cmd_run( void )
                       next = kJRInterrupt;
                   }
                 }
+#endif
                 
                 if( next == kJRInterrupt ) {
                         Serialprintln( "Interrupt." );
@@ -1384,6 +1330,13 @@ void loop()
 	bptr = linebuf;
 	SKIP_WHITESPACE( bptr );
 
+	// FUTURE (maybe)
+	//	- Instead of using "strcmp", switch to just checking the 
+	//	first word on the line, this will let us do command line
+	//	parameters, rather than just checking only the first word
+	//	on the line. 
+	//	- store the command strings for comparison to PROGMEM
+
 	// process it
 	if( !strcmp( bptr, "mem" )) { cmd_mem(); }
 
@@ -1394,12 +1347,6 @@ void loop()
 
 #ifdef DESKTOP
 	else if( !strcmp( bptr, "exit" )) { exit( 0 ); }
-#endif
-
-#ifdef DESKTOP_NEVER
-	else if( !strcmp( bptr, "files" )) { cmd_files(); }
-	else if( !strcmp( bptr, "load" )) { cmd_load(); }
-	else if( !strcmp( bptr, "save" )) { cmd_save(); }
 #endif
 
 	else if( !strcmp( bptr, "enew" )) { cmd_enew(); }
@@ -1445,9 +1392,9 @@ void loop()
 
 	}
 	else if( linebuf[0] != '\0' ){
-		Serial.println( "Huh?" );
+		Serialprintln( "Huh?" );
 	}
 
 cleanup:
-	Serial.println( "" );
+	Serialprintln( "" );
 }
