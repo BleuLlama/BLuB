@@ -83,6 +83,10 @@
 
 #define kFlagAutorun (0x01)
 
+
+// Serial baud rate
+#define kSerialBaud  (4800)
+
 ////////////////////////////////////////
 // Common
 
@@ -1182,7 +1186,7 @@ void do_autorun( void )
 void setup()
 {
 	// set up serial port
-	Serial.begin( 4800 );
+	Serial.begin( kSerialBaud );
 	while( !Serial ) {
 		; // wait for Leonardo to catch up
 	}

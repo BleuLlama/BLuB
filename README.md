@@ -58,6 +58,7 @@ interface is a line based text input.
 
 There are 26 variables, indicated by lowercase letters.
 Some variables are preset with values at the beginning of runtime.
+(true, false, zero, half)
 
 - t = 255
 - f = 0
@@ -97,7 +98,7 @@ These commands are typed in at the BLuB prompt by the user
         PL  (P)             PRINT   - output a parameter or string (newline)
 
         IC  (D)             INCHR - LET D = (newly INPUTTED character)
-        IL  (D)             same as IC, but ingore to end of line.
+        IL  (D)             same as IC, but then ignore to end of line.
 
     Variable Assignment
         LE  (D) (P)         LET D = P
@@ -461,7 +462,7 @@ and for DESKTOP builds:
 	40 EN
 
 
-## Blink the LED (pin 8)
+## Blink the LED (pin 13)
 	10 RE Blink the LED a bit
 	20 LE w 200
 	30 CA 1000
@@ -470,9 +471,9 @@ and for DESKTOP builds:
 	60 PL "Done!"
 	70 EN
 	1000 LE g 0
-	1010 DW 8 0
+	1010 DW 13 0
 	1020 WA w
-	1030 DW 8 1
+	1030 DW 13 1
 	1040 WA w
 	1050 MI g
 	1060 IF g < 5 GO 1010
