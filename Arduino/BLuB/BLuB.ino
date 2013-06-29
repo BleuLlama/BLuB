@@ -7,8 +7,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v1.00  2013-June-27  yorgle@gmail.com"
+#define kBLuBVersion	"v1.01  2013-June-29  yorgle@gmail.com"
 
+// v1.01  2013-June-29  MS added
+//
 // v1.00  2013-June-27  Version bump to 1.0!
 //			pulled out unneeded DESKTOP code.
 //
@@ -662,6 +664,13 @@ int evaluate_line( char * line, char **bufc )
 	if( OpcodeIs( 'W', 'A' )) {
 		valueA = getParamValue( &line, &next );
 		delay( valueA );
+		return next;
+	}
+
+	// MS - millis() - get the number of millis since poweron
+	if( OpcodeIs( 'M', 'S' )) {
+		varname = getDestVarname( &line, &next );
+		storeVariable( varname, millis(), next );
 		return next;
 	}
 

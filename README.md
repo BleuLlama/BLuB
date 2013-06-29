@@ -158,6 +158,7 @@ These commands are typed in at the BLuB prompt by the user
 
     Misc 
         WA  (D)             WAIT D  (milliseconds)
+        MS  (D)             LET D = millis()
         AS  (D) (P)         LET D = ASC( P )
         RN  (D) (P)         LET D = RND( P )   (0..P)
         RA  (P)             RANDOMIZE( P )     (set random seed)
@@ -478,4 +479,16 @@ and for DESKTOP builds:
 	1050 MI g
 	1060 IF g < 5 GO 1010
 	1070 CR
+
+## Example of WAit and MS
+
+	10 RE print out the time in ms, wait for 500ms (1/2 sec) a few times
+	20 LE g 0
+	30 MS a
+	40 PL a
+	50 WA 500
+	60 MI g
+	70 IF g < 5 GO 30
+	80 PL "Done!"
+	90 EN
 
