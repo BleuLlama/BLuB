@@ -69,6 +69,7 @@ the following little programs are all synonymous:
 	50 IF a < 100 GO 40
 
 and:
+
 	10 REM example program
 	20 PRINT "Hello, World!"
 	30 LET a 42
@@ -76,6 +77,7 @@ and:
 	50 IF a < 100 GO 40
 
 and:
+
 	20PR"Hello, World!"
 	30LEa42
 	40MIa
