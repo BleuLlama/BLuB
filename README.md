@@ -138,9 +138,10 @@ These commands are typed in at the BLuB prompt by the user
 
     Peek and Poke
         PE  (D) (A)         LET D = PEEK( A ) - get from RAM
-        PO  (A) (V)         POKE( A, V )      - store V in RAM
+        PO  (A) (V) ...     POKE( A, V )      - store V in RAM
         EE  (D) (A)         LET D = PEEK( A ) - get from EEPROM
-        EO  (A) (V)         POKE( A, V )      - store V in EEPROM
+        EO  (A) (V) ...     POKE( A, V )      - store V in EEPROM
+	-- note: PO and EO can poke multiple sequential bytes
 
     Math
         M+  (D) (P) (Q)     LET D = P + Q
@@ -480,20 +481,21 @@ Here is the program to turn on autorun for ATmega168 and ATmega8
 	30 EO 511 1
 	40 EN
 
+Note that this can be simplified using sequential EEPROM pokes on a single line:
+
+	10 EO 509 66 76 1
+	20 EN
+
 Here is the program to turn on autorun for ATmega328
 
-	10 EO 1021 66
-	20 EO 1022 76
-	30 EO 1023 1
-	40 EN
+	10 EO 1021 66 76 1
+	20 EN
 
 And here is the program to turn on autorun for ATmega1280. ATmega2560,
 and for DESKTOP builds:
 
-	10 EO 4093 66
-	20 EO 4094 76
-	30 EO 4095 1
-	40 EN
+	10 EO 4093 66 76 1
+	20 EN
 
 
 ## Blink the LED (pin 13)

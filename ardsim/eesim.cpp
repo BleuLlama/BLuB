@@ -17,7 +17,6 @@ eeprom_simulator::eeprom_simulator( std::string filename, long size )
 	: fn( filename )
 	, sz( size )
 {
-	sz++;
 	this->memory = (unsigned char *) malloc( sizeof( unsigned char) * sz );
 	this->Load();
 }

@@ -13,6 +13,8 @@
 //			response and error strings adjusted to save bytes
 //			9600 baud by default
 //			FASTSERIAL and kSerialLineDelay added for slow terms
+//			EO and PO now can have multiple items per line
+//			eg:  EO 509 66 67 1
 //
 // v1.02  2013-July-03  (abandoned) 
 //			(reworking of the main if loop to save program space.)
@@ -796,10 +798,16 @@ int evaluate_line( char * line, char **bufc )
 	if( OpcodeIs( 'P', 'O' )) {
 		// PO ( addr ) (value )
 		valueA = getParamValue( &line, &next );
-		valueB = getParamValue( &line, &next );
-		if( next == kJRNextLine ) {
-			programRam[ valueA % kRamSize ] = valueB;
-		}
+		do {
+			valueB = getParamValue( &line, &next );
+			if( next == kJRNextLine ) {
+				programRam[ valueA % kRamSize ] = valueB;
+				SKIP_WHITESPACE( line );
+			}
+			valueA++;
+		} while( (next == kJRNextLine)
+			&& (*line != '\n')
+			&& (*line != '\0') );
 		return next;
 	}
 
@@ -815,10 +823,16 @@ int evaluate_line( char * line, char **bufc )
 	// EO - POKE - Store int an EEPROM address
 	if( OpcodeIs( 'E', 'O' )) {
 		valueA = getParamValue( &line, &next );
-		valueB = getParamValue( &line, &next );
-		if( next == kJRNextLine ) {
-			EEPROM.write( valueA, (valueB & 0x0ff) );
-		}
+	 	do {
+			valueB = getParamValue( &line, &next );
+			if( next == kJRNextLine ) {
+				EEPROM.write( valueA, (valueB & 0x0ff) );
+				SKIP_WHITESPACE( line );
+			}
+			valueA++;
+		} while( (next == kJRNextLine)
+			&& (*line != '\n')
+			&& (*line != '\0') );
 		return next;
 	}
 
