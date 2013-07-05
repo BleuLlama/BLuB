@@ -35,6 +35,10 @@ It is expected that the serial interface will be used to input programs
 to be stored into the EEPROM, as well as for offline storage via text
 capture of program listings.
 
+BLuB has been optimized to maximize RAM space, so that it is completely
+usable on an ATmega 168 part.  If there was a choice that would trade-off
+progmem usage versus RAM, I went with progmem.  This means that the 
+RAM footprint is small at the expense, in some cases, of PROGMEM usage.
 
 --
 
@@ -49,10 +53,37 @@ interface is a line based text input.
 - Opcode is two uppercase letters
 - Operands are lowercase letters for variables
 - Operands are integer base-10 digits for immediate numbers
-- Operands of multiple digits can be separated with a comma
+- Operands of multiple digits can be separated with a comma or whitespace
 - Operands of string type start with a double quote to another dquote 
 
+Some notes:  Whitespace between portions of the line are optional. For 
+reading opcodes, the first two non-whitespace characters are considered
+to be the opcode. The uppercase letters can continue until the operands
+start (lowercase variable letter names, or numerical digits) So, for example,
+the following little programs are all synonymous:
+
+	10 RE example program
+	20 PR "Hello, World!"
+	30 LE a 42
+	40 MI a
+	50 IF a < 100 GO 40
+
+and:
+	10 REM example program
+	20 PRINT "Hello, World!"
+	30 LET a 42
+	40 MINCREMENT a
+	50 IF a < 100 GO 40
+
+and:
+	20PR"Hello, World!"
+	30LEa42
+	40MIa
+	50IFa<100GO40
         
+And so on.  This means that you can be as verbose in your program listing
+as you'd like, or as short to try to preserve EEPROM/RAM usage.
+
 
 # Variables
 

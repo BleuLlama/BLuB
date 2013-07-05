@@ -12,6 +12,7 @@
 // v1.03  2013-July-05  SerialprintNewline added to save a few bytes
 //			response and error strings adjusted to save bytes
 //			9600 baud by default
+//			FASTSERIAL and kSerialLineDelay added for slow terms
 //
 // v1.02  2013-July-03  (abandoned) 
 //			(reworking of the main if loop to save program space.)
@@ -95,6 +96,12 @@
 
 // Serial baud rate
 #define kSerialBaud  (9600)
+
+// if your display terminal is FAST, then define FASTSERIAL
+// otherwise, undef it, to add the LineDelay ms delay after each line displayed
+// NOTE: this is only for program listings (list, elist)
+#undef FASTSERIAL
+#define kSerialLineDelay 	(50)
 
 ////////////////////////////////////////
 // Common
@@ -366,6 +373,10 @@ void cmd_elist( void )
 	{
 		ch = EEPROM.read( i );
 
+#ifndef FASTSERIAL
+		if( ch == '\n' ) delay( kSerialLineDelay );
+#endif
+
 		if( ch == '\0' ) continue;
 		Serial.write( (const uint8_t *) &ch, 1 );
 	}
@@ -455,9 +466,20 @@ void cmd_new( void )
 
 void cmd_list( void )
 {
+#ifdef FASTSERIAL
 	SerialprintNewline();		// newline before
 	Serial.print( programRam );	// dump it all out
 	// no need for println, since program ram ends with newline
+#else
+	// SLOW serial - add delays per line to keep up with my slow display
+	int p = 0;
+	while( programRam[p] != '\0' && p < kRamSize )
+	{
+		Serial.write( programRam[p] );
+		if( programRam[p] == '\n' ) delay( kSerialLineDelay );
+		p++;
+	}
+#endif
 }
 
 
