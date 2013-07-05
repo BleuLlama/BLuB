@@ -7,8 +7,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v1.01  2013-June-29  yorgle@gmail.com"
+#define kBLuBVersion	"v1.03  2013-July-04  yorgle@gmail.com"
 
+// v1.03  2013-July-05  SerialprintNewline added to save a few bytes
+//			response and error strings adjusted to save bytes
+//			9600 baud by default
+//
+// v1.02  2013-July-03  (abandoned) 
+//			(reworking of the main if loop to save program space.)
+//
 // v1.01  2013-June-29  MS added
 //
 // v1.00  2013-June-27  Version bump to 1.0!
@@ -87,7 +94,7 @@
 
 
 // Serial baud rate
-#define kSerialBaud  (4800)
+#define kSerialBaud  (9600)
 
 ////////////////////////////////////////
 // Common
@@ -134,11 +141,15 @@ void SerialPrint_P(PGM_P str) {
         Serialprint( x ); \
         Serialprint( "\n" );  /* FUTURE should we be \n\r? */
 
+#define SerialprintNewline() \
+	Serial.println();
+
 #else
 ////////////////////////////////////////
 // Not arduino
-#define Serialprint( x )  Serial.print( x )
-#define Serialprintln( x ) Serial.println( x )
+#define Serialprint( x )     Serial.print( x )
+#define Serialprintln( x )   Serial.println( x )
+#define SerialprintNewline() Serial.println()
 #endif
 
 
@@ -148,28 +159,63 @@ void SerialPrint_P(PGM_P str) {
 #define kBufLen (32)
 char buffer[kBufLen];
 
+// PRINT_LINE for debugging
 #define PRINT_LINE( L ) \
 	{ \
 		for( char * tl = (L) ; *tl != '\n' && *tl != '\0' ; tl++ ) \
 			Serial.write( tl, 1 ); \
 		Serial.println( "" ); \
 	}
-		
-#define SKIP_NUMBER( A ) \
+
+////////////////////////////////////////////////////////////
+// Skip Number
+
+#define macroSKIP_NUMBER( A ) \
 	while(     (*A) >= '0' \
 		&& (*A) <= '9' \
 		&& (*A) != '\0' ) (A)++;
 
-#define SKIP_WHITESPACE( A ) \
+void SkipNumber( char ** l )
+{
+	macroSKIP_NUMBER( *l );
+}
+#define SKIP_NUMBER( A ) \
+	SkipNumber( &A )
+
+
+////////////////////////////////////////////////////////////
+// Skip Whitespace
+
+#define macroSKIP_WHITESPACE( A ) \
 	while( (   (*A) == ' ' \
 		|| (*A) == '\t' \
 		|| (*A) == ',' \
 	        ) && (*A) != '\0' ) (A)++; /* parens here are IMPORTANT */
 
-#define SKIP_UPPERCASE( x ) \
+void SkipWhitespace( char ** l )
+{
+	macroSKIP_WHITESPACE( *l );
+}
+
+#define SKIP_WHITESPACE( A ) \
+	SkipWhitespace( &A )
+
+////////////////////////////////////////////////////////////
+
+#define macroSKIP_UPPERCASE( x ) \
 	while(     (*x) >= 'A' \
 		&& (*x) <= 'Z' \
 		&& (*x) != '\0' ) (x)++;
+
+void SkipUppercase( char ** l )
+{
+	macroSKIP_UPPERCASE( *l );
+}
+
+#define SKIP_UPPERCASE( A ) \
+	SkipUppercase( &A )
+
+////////////////////////////////////////////////////////////
 
 int myAtoi( char * buf )
 {
@@ -215,16 +261,23 @@ void cmd_mem( void )
 {
 	int rfree = strlen( (const char *)programRam );
 	rfree +=1;
-	rfree = kRamSize - rfree;
+	rfree = kRamSize +1 - rfree;
 
-	Serialprint( "    " );
+	Serialprint( "Free:\n   " );
 	Serial.print( (long)rfree, DEC );
-	Serialprint( " of " );
+	Serialprint( " / " );
 	Serial.print( (long)kRamSize, DEC );
-	Serialprintln( " bytes free RAM" );
+	Serialprintln( " RAM" );
+
+	// see if EEPROM is in use
+	int ch = ch = EEPROM.read( 0 );
+
+	if( ch == 0x0ff ) {
+		Serialprintln( "   EEPROM unformatted." );
+		return;
+	}
 
 	// compute EEPROM free space
-	int ch = 'X';
 
 	// figure out how much is used
 	for( rfree=0 ; (rfree<=kEESize) && (ch != '\0') ; rfree++ )
@@ -235,26 +288,26 @@ void cmd_mem( void )
 	rfree = kEESize - rfree; // turn it into free.
 
 
-	Serialprint( "    " );
+	Serialprint( "   " );
 	Serial.print( (long)rfree, DEC );
-	Serialprint( " of " );
+	Serialprint( " / " );
 	Serial.print( (long)kEESize, DEC );
-	Serialprintln( " bytes free EEProm" );
+	Serialprintln( " EEPROM" );
 }
 
 void cmd_help( void )
 {
-	Serialprintln( "BLuB Interface" );
-	Serialprintln( kBLuBVersion );
+	Serialprint( "BLuB " kBLuBVersion );
 	cmd_mem();
 
-	Serialprintln( "" );
-	Serialprintln( "Available commands:" );
+#ifdef USE_MORE_PROGRAMSPACE
+	Serialprintln( "\nCommands:" );
 	//                   ------- ------- ------- ------- -------
 	Serialprintln( "    help    mem     vars    new     list" );
 	Serialprintln( "    run     tron    troff" );
 	Serialprintln( "    elist   eload   esave   enew" );
 	//                   ------- ------- ------- ------- -------
+#endif
 }
 
 
@@ -295,14 +348,14 @@ void getSerialLine( char * buf, int maxbuf, boolean echoback )
 
 void cmd_enew( void )
 {
-	Serialprint( "Clearing EEPROM " );
+	Serialprint( "Formatting " );
 	for( int i=0 ; i<kEESize ; i++ )
 	{
 		EEPROM.write( i, 0x00 );
 		//    digitalWrite( kLED, i & 0x020 );
 		if( i%64 == 0 ) Serialprint( "." );
 	}
-	Serialprintln( " Done." );
+	Serialprintln( "\nDone." );
 }
 
 void cmd_elist( void )
@@ -332,7 +385,7 @@ void cmd_eload( void )
 	}
 
 	Serial.print( (long)i, DEC );
-	Serialprintln( " bytes loaded from EEPROM." );
+	Serialprintln( " bytes loaded." );
 }
 
 void cmd_esave( void )
@@ -349,7 +402,7 @@ void cmd_esave( void )
 	}
 
 	Serial.print( (long)i, DEC );
-	Serialprintln( " bytes saved to EEPROM." );
+	Serialprintln( " bytes saved." );
 }
 
 
@@ -378,7 +431,7 @@ void init_vars( void )
 void cmd_vars( void )
 {
 	char buf[20];
-	Serialprintln( "Variables:" );
+	Serialprintln( "Vars:" );
 	for( int i=0 ; i<(kNVariables/2) ; i++ )
 	{
 		snprintf( buf, 20, "  %c: %-9d", i+'a', variables[i] );
@@ -402,7 +455,7 @@ void cmd_new( void )
 
 void cmd_list( void )
 {
-	Serialprintln( "" );		// newline before
+	SerialprintNewline();		// newline before
 	Serial.print( programRam );	// dump it all out
 	// no need for println, since program ram ends with newline
 }
@@ -608,7 +661,7 @@ int evaluate_line( char * line, char **bufc )
 			Serial.print( (long) valueA, DEC );
 		}
 		if( op1 == 'L' ) {
-			Serial.println( "" );
+			SerialprintNewline();
 		}
 
 		return kJRNextLine;
@@ -1047,7 +1100,14 @@ int evaluate_line( char * line, char **bufc )
 		return next;
 	}
 
-	Serialprintln( "Unknown opcode." );
+	
+	// little bit of a hack, but it'll save a few bytes.
+	buf = line;
+	buf[0] = op0;
+	buf[1] = op1;
+	buf[2] = '\0';
+	Serialprint( "?OP: " );
+	Serial.println( buf );
 	return kJRStop;
 }
 
@@ -1077,7 +1137,7 @@ void cmd_run( void )
 			bufc = findLine( next );
 			if( *bufc == '\0' ) {
 				Serial.print( (long) next, DEC );
-				Serialprintln( ": Line not found." );
+				Serialprintln( ": ?LINE" );
 				break;
 			}
 		}
@@ -1097,7 +1157,7 @@ void cmd_run( void )
 
 		// trace output
 		if( trace ) {
-			Serialprint( "Gosub Stack: " );
+			Serialprint( "Gosub: " );
 			Serial.print( (long) gosubLevel, DEC );
 			Serialprintln( " items." );
 
@@ -1107,7 +1167,7 @@ void cmd_run( void )
 				Serial.write( (const uint8_t*)tc, 1 );
 				tc++;
 			}
-			Serialprintln( "" );
+			SerialprintNewline();
 
 
 			// get user input (return)
@@ -1131,26 +1191,25 @@ void cmd_run( void )
 #endif
                 
                 if( next == kJRInterrupt ) {
-                        Serialprintln( "Interrupt." );
+                        Serialprintln( "STOP." );
                         next = kJRStop;
                 }
 
 		if( next == kJRGosubStack ) {
-			Serialprintln( "Gosub stack error." );
+			Serialprintln( "?GOSUB" );
 			next = kJRStop;
 		}
 		if( next == kJRDBZError ) {
-			Serialprintln( "Divide By Zero Error." );
+			Serialprintln( "?DBZ" );
 			next = kJRStop;
 		}
 		if( next == kJRSyntaxError ) {
-			Serialprintln( "Syntax Error." );
+			Serialprintln( "?SYNTAX" );
 			next = kJRStop;
 		}
 	}
 
-	Serialprintln( "" );
-	Serialprint( "Stopped at line " );
+	Serialprint( "\nSTOP @ " );
 	Serial.println( (long)cline, DEC );
 }
 
@@ -1162,12 +1221,12 @@ void do_autoload( void )
 	int ch = EEPROM.read( 0 );
 
 	if( ch == 0x0ff ) {
-		Serialprintln( "EEPROM is unformatted. 'enew' to format." );
+		// unformatted. don't do anything.
 		return;
 	}
 
 	if( ch == 0x00 ) {
-		Serialprintln( "EEPROM has no program." );
+		// formatted, empty. no reason to print out anything.
 		return;
 	}
 	cmd_eload();
@@ -1200,13 +1259,11 @@ void setup()
 		; // wait for Leonardo to catch up
 	}
 
-	Serialprintln( "BLuB Interface" );
-	Serialprintln( kBLuBVersion );
-	Serialprintln( "" );
+	Serialprintln( "BLuB " kBLuBVersion );
 	cmd_new();
 	init_vars();
 	do_autoload();
-	Serialprintln( "" );
+	SerialprintNewline();
 	cmd_mem();
 	
 	do_autorun();
@@ -1409,5 +1466,5 @@ void loop()
 	}
 
 cleanup:
-	Serialprintln( "" );
+	SerialprintNewline();
 }

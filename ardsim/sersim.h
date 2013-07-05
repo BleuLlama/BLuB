@@ -36,6 +36,8 @@ public:
 	void println( double v, int prec=2 ); // bits of precision after decimal point
 	void println( std::string v );
 
+	void println( void ) { println( "" ); }
+
 	void write( long v );
 	void write( std::string v );
 	void write( char * v, long len );
