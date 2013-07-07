@@ -466,7 +466,7 @@ Here are some examples using IF statements
 	50 PL "Done!  Try 'list' now!"
 	60 EN
 
-## Turn on autorun (POKE EEPROM)
+## Turn on autorun (POKE EEPROM) (other config stuff too)
 
 This puts three bytes at the end of the EEPROM which trigger us to
 auto-run the program at startup time.  As it is, we load the program
@@ -496,6 +496,13 @@ and for DESKTOP builds:
 
 	10 EO 4093 66 76 1
 	20 EN
+
+For additional configuration stuff, add these numbers to the last byte:
+
+	- 1 - (0x01) Autorun the stored program
+	- 32 - (0x20) Add 50ms delay after each newline in list/elist
+	- 64 - (0x40) Add 250ms delay after each newline in list/elist
+	- 128 - (0x80) Add 500ms delay after each newline in list/elist
 
 
 ## Blink the LED (pin 13)

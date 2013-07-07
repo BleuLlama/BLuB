@@ -7,8 +7,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v1.03  2013-July-04  yorgle@gmail.com"
+#define kBLuBVersion	"v1.04  2013-July-06  yorgle@gmail.com"
 
+// v1.04  2013-July-06  Serial Delay for \n is set in the EEPROM config byte
+//
 // v1.03  2013-July-05  SerialprintNewline added to save a few bytes
 //			response and error strings adjusted to save bytes
 //			9600 baud by default
@@ -95,15 +97,16 @@
 
 #define kFlagAutorun (0x01)
 
+// when these are set in the config byte, the associated values are added to the newline delay 
+// (added for slow displays with no flow control)
+#define kFlagDelay8 (0x80)    /* (128) 500 ms delay per line */
+#define kFlagDelay4 (0x40)    /* (64)  250 ms delay */
+#define kFlagDelay2 (0x20)    /* (32)  50 ms delay */
+
+int serialDelay  = 0;
 
 // Serial baud rate
 #define kSerialBaud  (9600)
-
-// if your display terminal is FAST, then define FASTSERIAL
-// otherwise, undef it, to add the LineDelay ms delay after each line displayed
-// NOTE: this is only for program listings (list, elist)
-#undef FASTSERIAL
-#define kSerialLineDelay 	(50)
 
 ////////////////////////////////////////
 // Common
@@ -158,7 +161,7 @@ void SerialPrint_P(PGM_P str) {
 // Not arduino
 #define Serialprint( x )     Serial.print( x )
 #define Serialprintln( x )   Serial.println( x )
-#define SerialprintNewline() Serial.println()
+#define SerialprintNewline() Serial.println( "" )
 #endif
 
 
@@ -265,6 +268,26 @@ int myAtoiP( char ** buf, int * next )
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void SetSerialDelay( void )
+{
+	int ch;
+
+	// check for sentinel
+	ch = EEPROM.read( E2END-2 );
+	if( ch != 'B' ) return;
+	ch = EEPROM.read( E2END-1 );
+	if( ch != 'L' ) return;
+
+	ch = EEPROM.read( E2END );
+
+        serialDelay = 0;
+        if( ch & kFlagDelay2 ) serialDelay += 50;
+        if( ch & kFlagDelay4 ) serialDelay += 250;
+        if( ch & kFlagDelay8 ) serialDelay += 500;        
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 void cmd_mem( void )
 {
@@ -272,14 +295,17 @@ void cmd_mem( void )
 	rfree +=1;
 	rfree = kRamSize +1 - rfree;
 
+        SetSerialDelay();
+
 	Serialprint( "Free:\n   " );
 	Serial.print( (long)rfree, DEC );
 	Serialprint( " / " );
 	Serial.print( (long)kRamSize, DEC );
 	Serialprintln( " RAM" );
+	delay( serialDelay );
 
 	// see if EEPROM is in use
-	int ch = ch = EEPROM.read( 0 );
+	int ch = EEPROM.read( 0 );
 
 	if( ch == 0x0ff ) {
 		Serialprintln( "   EEPROM unformatted." );
@@ -302,19 +328,27 @@ void cmd_mem( void )
 	Serialprint( " / " );
 	Serial.print( (long)kEESize, DEC );
 	Serialprintln( " EEPROM" );
+	delay( serialDelay );
 }
 
 void cmd_help( void )
 {
-	Serialprint( "BLuB " kBLuBVersion );
+        SetSerialDelay();
+        
+	Serialprintln( "BLuB " kBLuBVersion );
+	delay( serialDelay );
 	cmd_mem();
 
 #ifdef USE_MORE_PROGRAMSPACE
 	Serialprintln( "\nCommands:" );
+	delay( serialDelay );
 	//                   ------- ------- ------- ------- -------
 	Serialprintln( "    help    mem     vars    new     list" );
+	delay( serialDelay );
 	Serialprintln( "    run     tron    troff" );
+	delay( serialDelay );
 	Serialprintln( "    elist   eload   esave   enew" );
+	delay( serialDelay );
 	//                   ------- ------- ------- ------- -------
 #endif
 }
@@ -371,13 +405,13 @@ void cmd_elist( void )
 {
 	int ch = 'X';
 
+        SetSerialDelay();
+
 	for( int i=0 ; (i<kEESize) && (ch != '\0') ; i++ )
 	{
 		ch = EEPROM.read( i );
 
-#ifndef FASTSERIAL
-		if( ch == '\n' ) delay( kSerialLineDelay );
-#endif
+		if( ch == '\n' ) delay( serialDelay );
 
 		if( ch == '\0' ) continue;
 		Serial.write( (const uint8_t *) &ch, 1 );
@@ -468,17 +502,19 @@ void cmd_new( void )
 
 void cmd_list( void )
 {
-#ifdef FASTSERIAL
+#ifdef NEVER
 	SerialprintNewline();		// newline before
 	Serial.print( programRam );	// dump it all out
 	// no need for println, since program ram ends with newline
 #else
+        SetSerialDelay();
+        
 	// SLOW serial - add delays per line to keep up with my slow display
 	int p = 0;
 	while( programRam[p] != '\0' && p < kRamSize )
 	{
 		Serial.write( programRam[p] );
-		if( programRam[p] == '\n' ) delay( kSerialLineDelay );
+		if( programRam[p] == '\n'  ) delay( serialDelay );
 		p++;
 	}
 #endif
@@ -1268,7 +1304,8 @@ void do_autoload( void )
 	cmd_eload();
 }
 
-void do_autorun( void )
+
+void do_startupOptions( void )
 {
 	int ch;
 
@@ -1278,9 +1315,11 @@ void do_autorun( void )
 	ch = EEPROM.read( E2END-1 );
 	if( ch != 'L' ) return;
 
-
-	// ok. let's check for the autorun flag
 	ch = EEPROM.read( E2END );
+
+        //////////////////////////
+        // Autoload
+	// ok. let's check for the autorun flag
 	if( ch & kFlagAutorun )
 		cmd_run();
 }
@@ -1302,7 +1341,7 @@ void setup()
 	SerialprintNewline();
 	cmd_mem();
 	
-	do_autorun();
+	do_startupOptions();
 } 
 
 
