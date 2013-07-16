@@ -7,8 +7,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v1.04  2013-July-06  yorgle@gmail.com"
+#define kBLuBVersion	"v1.05  2013-July-16  yorgle@gmail.com"
 
+// v1.05  2013-July-16  PC op added to print out a value as a character
+//
 // v1.04  2013-July-06  Serial Delay for \n is set in the EEPROM config byte
 //
 // v1.03  2013-July-05  SerialprintNewline added to save a few bytes
@@ -700,8 +702,10 @@ int evaluate_line( char * line, char **bufc )
 	// USER IO
 
 	// PR - PRINT ; - print out a variable, parameter or string
+	// PC - PRINT ; - print out a character parameter CHR$
 	// PL - PRINT - print out a variable, parameter or string, with newline
 	if(    OpcodeIs( 'P', 'R' )
+	    || OpcodeIs( 'P', 'C' )
 	    || OpcodeIs( 'P', 'L' ) ) {
 
 		if( *line == '\0' || *line == '\n' ) {
@@ -718,7 +722,13 @@ int evaluate_line( char * line, char **bufc )
 			}
 		} else {
 			valueA = getValue( line );
-			Serial.print( (long) valueA, DEC );
+
+			if( op1 == 'C' ) {
+				Serial.write( valueA );
+				Serial.flush();
+			} else {
+				Serial.print( (long) valueA, DEC );
+			}
 		}
 		if( op1 == 'L' ) {
 			SerialprintNewline();
