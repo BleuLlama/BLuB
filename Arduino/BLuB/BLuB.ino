@@ -10,6 +10,7 @@
 #define kBLuBVersion	"v1.05  2013-July-16  yorgle@gmail.com"
 
 // v1.05  2013-July-16  PC op added to print out a value as a character
+//			Bug fix for EO/PO indexing/wraparound
 //
 // v1.04  2013-July-06  Serial Delay for \n is set in the EEPROM config byte
 //
@@ -861,7 +862,7 @@ int evaluate_line( char * line, char **bufc )
 	if( OpcodeIs( 'E', 'E' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
-		valueB = EEPROM.read( valueA % kRamSize );
+		valueB = EEPROM.read( valueA % kEESize );
 		storeVariable( varname, valueB, next );
 		return next;
 	}
@@ -872,7 +873,7 @@ int evaluate_line( char * line, char **bufc )
 	 	do {
 			valueB = getParamValue( &line, &next );
 			if( next == kJRNextLine ) {
-				EEPROM.write( valueA, (valueB & 0x0ff) );
+				EEPROM.write( valueA % kEESize, valueB & 0x0ff );
 				SKIP_WHITESPACE( line );
 			}
 			valueA++;
