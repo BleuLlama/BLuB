@@ -79,4 +79,4 @@ full: clean
 .PHONY: full
 
 install:
-	  cp Arduino/BLuB/BLuB.ino ~/Dropbox/ArduinoSketches/BLuB/BLuB.ino
+	  cp Arduino/BLuB/BLuB.ino ~/Dropbox/ArduinoSketches/BL328\ and\ components/BLuB/BLuB.ino 

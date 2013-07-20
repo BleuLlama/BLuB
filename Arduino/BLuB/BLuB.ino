@@ -7,8 +7,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v1.05  2013-July-16  yorgle@gmail.com"
+#define kBLuBVersion	"v1.06  2013-July-19  yorgle@gmail.com"
 
+// v1.06  2013-July-19  Unformatted EEprom display for "mem" and "elist"
+//
 // v1.05  2013-July-16  PC op added to print out a value as a character
 //			Bug fix for EO/PO indexing/wraparound
 //
@@ -307,27 +309,26 @@ void cmd_mem( void )
 	Serialprintln( " RAM" );
 	delay( serialDelay );
 
+	Serialprint( "   " );
+
 	// see if EEPROM is in use
 	int ch = EEPROM.read( 0 );
 
 	if( ch == 0x0ff ) {
-		Serialprintln( "   EEPROM unformatted." );
-		return;
-	}
-
-	// compute EEPROM free space
-
-	// figure out how much is used
-	for( rfree=0 ; (rfree<=kEESize) && (ch != '\0') ; rfree++ )
-	{
-		ch = EEPROM.read( rfree );
-		if( ch == '\0' ) continue;
-	}
-	rfree = kEESize - rfree; // turn it into free.
-
-
-	Serialprint( "   " );
-	Serial.print( (long)rfree, DEC );
+		Serialprint( "Unformatted" );
+	} else {
+        
+        	// compute EEPROM free space
+        
+        	// figure out how much is used
+        	for( rfree=0 ; (rfree<=kEESize) && (ch != '\0') ; rfree++ )
+        	{
+        		ch = EEPROM.read( rfree );
+        		if( ch == '\0' ) continue;
+        	}
+        	rfree = kEESize - rfree; // turn it into free.
+    	        Serial.print( (long)rfree, DEC );
+        }
 	Serialprint( " / " );
 	Serial.print( (long)kEESize, DEC );
 	Serialprintln( " EEPROM" );
@@ -406,9 +407,14 @@ void cmd_enew( void )
 
 void cmd_elist( void )
 {
-	int ch = 'X';
+	int ch = EEPROM.read( 0 );
 
         SetSerialDelay();
+        
+        if( ch == 255 ) {
+          Serialprintln( "Unformatted" );
+          return;
+        }
 
 	for( int i=0 ; (i<kEESize) && (ch != '\0') ; i++ )
 	{
@@ -424,7 +430,12 @@ void cmd_elist( void )
 void cmd_eload( void )
 {
 	int i;
-	int ch = 'X';
+	int ch = EEPROM.read( i );
+
+        if( ch == 255 ) {
+          Serialprintln( "Unformatted" );
+          return;
+        }
 
 	for( i=0 ; (i<kEESize) && (ch != '\0') ; i++ )
 	{
