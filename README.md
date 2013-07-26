@@ -542,6 +542,7 @@ poke the desired values into the EEPROM like so:
 	1060 IF g < 5 GO 1010
 	1070 CR
 
+
 ## Example of WAit and MS time
 
 	10 RE print out the time in ms, wait for 500ms (1/2 sec) a few times
@@ -554,7 +555,11 @@ poke the desired values into the EEPROM like so:
 	80 PL "Done!"
 	90 EN
 
-## example of the famous "10 PRINT CHR$ (205.5 + RND (1)); : GOTO 10" one-liner
+
+## Recreation of the "10 PRINT" BASIC one-liner
+
+This is a BLuB implementation of the maze-generating one-liner as seen in
+the publication, "10 PRINT", as found at http://10print.org/
 
 For this, we'll have to get a little creative to get it to work.
 We'll do all of the same things, but since BLuB is a bit different
@@ -564,12 +569,12 @@ apart to multiple lines.
 	100 RE recreate the maze-generating BASIC one-liner
 	110 LE g 0
 
-	200 RE a = (random * 45) + 47
+	200 RE pick 47 or 92: a = 47 + (random( 1 ) * 45)
 	210 RN a 1
 	220 M* a a 45
 	230 M+ a a 47
 
-	300 RE print out the character
+	300 RE print out the value as ascii '/' or '\'
 	310 PC a
 
 	400 RE repeat this 800 times (10 lines)
