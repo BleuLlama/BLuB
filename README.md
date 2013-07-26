@@ -135,9 +135,12 @@ These commands are typed in at the BLuB prompt by the user
     Text IO
         PR  (P)             PRINT ; - print a parameter or string
         PL  (P)             PRINT   - output a parameter or string (newline)
+	PC  (D)             PRINT (D) - output ascii data as character
 
         IC  (D)             INCHR - LET D = (newly INPUTTED character)
         IL  (D)             same as IC, but then ignore to end of line.
+
+        AS  (D)             convert the ascii '0'-'9' to values 0-9
 
     Variable Assignment
         LE  (D) (P)         LET D = P
@@ -381,7 +384,8 @@ This does the same as the above, but a litle differently
 
 This one is fun to do on various BASIC implementations.  It basically
 recursively calls itself, depleating the number of times a GOSUB
-can call itself.  Here's our version of it:
+can call itself.  It will eventually fail when the gosub stack is 
+saturated. Here's our version of it:
 
 	    10 RE Depleat the CAll stack
 	    10 LEa0
@@ -390,7 +394,7 @@ can call itself.  Here's our version of it:
 	    40 MIa
 	    50 CA20
 
-## IF examples
+## IF + CAll examples
 
 Here are some examples using IF statements
 
@@ -419,7 +423,7 @@ Here are some examples using IF statements
 	1210 CR
 
 
-## ON examples
+## ON + CAll examples
 
 	10 RE ON example
 	20 LE g0
@@ -453,17 +457,17 @@ Here are some examples using IF statements
 
 ## PEEK (EEPROM)
 
-	10 RE Dump out first 1kb of EEPROM
+	10 RE Dump out first 100 bytes of EEPROM
 	20 LE a0
 	30 EE ba
 	40 PR b
 	50 PR " "
 	60 MI a
-	70 IF a<1000 GO 20
+	70 IF a<100 GO 20
 	80 PL "Done!"
 	90 EN
 
-## POKE (RAM)
+## POKE (RAM) and self-modifying RAM
 
 	10 RE Kill this program by nulling out the memory
 	20 LE a0
@@ -480,7 +484,8 @@ from EEPROM to RAM at startup time automatically.  If the final
 three bytes of the EEPROM are 'B', 'L', 1, (or in decimal, 66, 76, 1)
 then we will run the program also.
 
-Here is the program to turn on autorun for ATmega168 and ATmega8
+Here is the program to turn on autorun for ATmega168 and ATmega8, with 512 
+bytes of EEPROM space:
 
 	10 EO 509 66
 	20 EO 510 76
@@ -492,13 +497,13 @@ Note that this can be simplified using sequential EEPROM pokes on a single line:
 	10 EO 509 66 76 1
 	20 EN
 
-Here is the program to turn on autorun for ATmega328
+Here is the program to turn on autorun for ATmega328, with 1024 bytes of EEPROM space:
 
 	10 EO 1021 66 76 1
 	20 EN
 
 And here is the program to turn on autorun for ATmega1280. ATmega2560,
-and for DESKTOP builds:
+and for DESKTOP builds, with 4096 bytes of EEPROM space:
 
 	10 EO 4093 66 76 1
 	20 EN
@@ -519,7 +524,8 @@ poke the desired values into the EEPROM like so:
 	20 EO a 66 76 1
 
 
-## Blink the LED (pin 13)
+## Blink the LED (pin 13) using DigtalWrite and WAit
+
 	10 RE Blink the LED a bit
 	20 LE w 200
 	30 CA 1000
@@ -536,7 +542,7 @@ poke the desired values into the EEPROM like so:
 	1060 IF g < 5 GO 1010
 	1070 CR
 
-## Example of WAit and MS
+## Example of WAit and MS time
 
 	10 RE print out the time in ms, wait for 500ms (1/2 sec) a few times
 	20 LE g 0
@@ -547,4 +553,30 @@ poke the desired values into the EEPROM like so:
 	70 IF g < 5 GO 30
 	80 PL "Done!"
 	90 EN
+
+## example of the famous "10 PRINT CHR$ (205.5 + RND (1)); : GOTO 10" one-liner
+
+For this, we'll have to get a little creative to get it to work.
+We'll do all of the same things, but since BLuB is a bit different
+than basic as far as putting things on one line, we'll break it
+apart to multiple lines.
+
+	100 RE recreate the maze-generating BASIC one-liner
+	110 LE g 0
+
+	200 RE a = (random * 45) + 47
+	210 RN a 1
+	220 M* a a 45
+	230 M+ a a 47
+
+	300 RE print out the character
+	310 PC a
+
+	400 RE repeat this 800 times (10 lines)
+	410 MI g
+	420 IF g < 800 GO 200
+
+	500 PL
+	510 PL "Done."
+	520 EN
 

@@ -822,7 +822,8 @@ int evaluate_line( char * line, char **bufc )
 	if( OpcodeIs( 'R', 'N' )) {
 		varname = getDestVarname( &line, &next );
 		valueA = getParamValue( &line, &next );
-		valueB = random( valueA );
+		if( valueA < 1 ) valueA = 1;
+		valueB = random( valueA + 1 );
 		storeVariable( varname, valueB, next );
 		return next;
 	}
