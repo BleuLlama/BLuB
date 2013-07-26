@@ -500,15 +500,14 @@ void init_vars( void )
 
 void cmd_vars( void )
 {
-	char buf[20];
 	Serialprintln( "Vars:" );
 	for( int i=0 ; i<(kNVariables/2) ; i++ )
 	{
-		snprintf( buf, 20, "  %c: %-9d", i+'a', variables[i] );
-		Serial.print( buf );
+		snprintf( buffer, kBufLen, "  %c: %-5d", i+'a', variables[i] );
+		Serial.print( buffer );
 
-		snprintf( buf, 20, "    %c: %-9d", i+13+'a', variables[i+13] );
-		Serial.println( buf );
+		snprintf( buffer, kBufLen, " %c: %-5d", i+13+'a', variables[i+13] );
+		Serial.println( buffer );
 	}
 }
 
