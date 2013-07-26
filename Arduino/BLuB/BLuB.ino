@@ -7,8 +7,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v1.06  2013-July-19  yorgle@gmail.com"
+#define kBLuBVersion	"v1.07  2013-July-26  yorgle@gmail.com"
 
+// v1.07  2013-July-26  "clear" command
+//			variables 'e' and 'r' are preset with EE/RAM sizes
+//
 // v1.06  2013-July-19  Unformatted EEprom display for "mem" and "elist"
 //
 // v1.05  2013-July-16  PC op added to print out a value as a character
@@ -429,8 +432,8 @@ void cmd_elist( void )
 
 void cmd_eload( void )
 {
-	int i;
-	int ch = EEPROM.read( i );
+	int i = 0;
+	int ch = EEPROM.read( 0 );
 
         if( ch == 255 ) {
           Serialprintln( "Unformatted" );
@@ -451,7 +454,7 @@ void cmd_eload( void )
 
 void cmd_esave( void )
 {
-	int i;
+	int i = 0;
 	int ch = 'X';
 
 	for( i=0 ; (i<kEESize) && (ch != '\0') ; i++ )
@@ -487,7 +490,13 @@ void init_vars( void )
 	// (F)alse, (Z)ero
 	variables[ VarCharToIndex( 'f' ) ] = 0x00;
 	variables[ VarCharToIndex( 'z' ) ] = 0x00;
+
+	// (E)Eprom size and (R)AM size 
+	variables[ VarCharToIndex( 'e' ) ] = kEESize;
+	variables[ VarCharToIndex( 'r' ) ] = kRamSize;
+	
 }
+
 
 void cmd_vars( void )
 {
@@ -1510,6 +1519,7 @@ void loop()
 	else if( !strcmp( bptr, "new" )) { cmd_new(); }
 	else if( !strcmp( bptr, "list" )) { cmd_list(); }
 	else if( !strcmp( bptr, "vars" )) { cmd_vars(); }
+	else if( !strcmp( bptr, "clear" )) { init_vars(); }
 	else if( !strcmp( bptr, "help" )) { cmd_help(); }
 
 #ifdef DESKTOP

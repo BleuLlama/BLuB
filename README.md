@@ -89,14 +89,18 @@ as you'd like, or as short to try to preserve EEPROM/RAM usage.
 
 # Variables
 
-There are 26 variables, indicated by lowercase letters.
-Some variables are preset with values at the beginning of runtime.
-(true, false, zero, half)
+There are 26 variables, indicated by lowercase letters.  Some
+variables are preset with values at the beginning of runtime.  (true,
+false, zero, half, etc)  These can be restored to their initial
+values (all zero except for the ones indicated below) by running
+the 'clear' command.
 
 - t = 255
 - f = 0
 - z = 0
 - h = 128
+- e = (size of the EEProm)
+- r = (size of the RAM buffer)
 
 The remaining variables are initialized to '0' at start of runtime.
 
@@ -108,6 +112,8 @@ These commands are typed in at the BLuB prompt by the user
 - mem - display amount of free space in RAM and EEPROM
 - help - display a list of commands and version information
 - new - clear program memory, initialize variables
+- vars - display variables
+- clear - clears variables, and resets to default values
 - list - display the program loaded into memory
 - run - run the program in memory
 - tron - turn program runtime trace on
@@ -503,6 +509,14 @@ For additional configuration stuff, add these numbers to the last byte:
 	- 32 - (0x20) Add 50ms delay after each newline in list/elist
 	- 64 - (0x40) Add 250ms delay after each newline in list/elist
 	- 128 - (0x80) Add 500ms delay after each newline in list/elist
+
+A universal version of this can be used if you clear the variables to
+their initial state using the 'clear' command.  The EEPROM size is 
+stored in variable 'e', so all you need to do is subtract three, then
+poke the desired values into the EEPROM like so:
+
+	10 M- a e 3
+	20 EO a 66 76 1
 
 
 ## Blink the LED (pin 13)
