@@ -1576,3 +1576,80 @@ void loop()
 cleanup:
 	SerialprintNewline();
 }
+
+#ifdef NEVER
+/* this is the playground area for the SD card functions.
+   SD Card IO will be accomplished as bare segments of the drive, 
+   much like EEPROM.
+
+    Block 0: (reserved, unused for now)
+    Block 1: (first content block)
+    Block 2: (second content block)
+		...
+
+    Content Blocks:
+	byte 0..79    Null-backfilled filename 
+	byte 80..511  Content
+
+    snew - format SD card (quick format, skip to block 1, write a 0)
+    scatalog - display list of filenames
+	block = 1
+	{
+	    if byte[0] != '\0':
+		print block number ;
+		read block,  dump to serial until '\0'
+		    consume rest of block
+		OR
+		    consume to 80 bytes
+		    count up number of bytes until NULL
+		    display that number in bytes
+	    blocK++
+	}
+
+    ssave <block> <filename>
+
+	if( block <1  ||  block > 100 ) ERROR
+	seek to block number
+	write block
+	    write out filename
+	    pad to 80
+	    write out string
+	    pad to blocksize
+
+    sload <block>
+	seek to block number
+	read block
+	    skip 80 bytes
+	    read in string to ram
+	    stop when end of string or ram buffer
+	    skip to end of buffer
+*/
+
+int sdcard_open( void )
+{
+	/* put card in SPI mode */
+	/* query card size */
+	Serialprintln( "No SD." );
+	return -1;
+}
+
+void sdcard_seekblock( int block )
+{
+}
+
+void sdcard_catalog( void )
+{
+	if( !scard_open() ) return;
+	/* seek block 1 */
+}
+
+void sdcard_write( char * buffer )
+{
+	/* write out the buffer */
+	/* pad output to 512 bytes */
+	if( !scard_open() ) return;
+
+}
+
+
+#endif
