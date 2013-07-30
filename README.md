@@ -135,7 +135,7 @@ These commands are typed in at the BLuB prompt by the user
     Text IO
         PR  (P)             PRINT ; - print a parameter or string
         PL  (P)             PRINT   - output a parameter or string (newline)
-	PC  (D)             PRINT (D) - output ascii data as character
+        PC  (D)             PRINT (D) - output ascii data as character
 
         IC  (D)             INCHR - LET D = (newly INPUTTED character)
         IL  (D)             same as IC, but then ignore to end of line.
