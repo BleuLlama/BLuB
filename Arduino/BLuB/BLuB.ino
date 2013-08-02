@@ -7,7 +7,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Version history
 
-#define kBLuBVersion	"v1.07  2013-July-26  yorgle@gmail.com"
+#define kBLuBVersion	"v1.08  2013-Aug-01  yorgle@gmail.com"
+
+// v1.08  2013-Aug-01   Mass Storage beginnings
+//			delay() after newline streamlined into the macros
+//
+#undef kIncludeMassStorage
 
 // v1.07  2013-July-26  "clear" command
 //			variables 'e' and 'r' are preset with EE/RAM sizes
@@ -159,7 +164,8 @@ void SerialPrint_P(PGM_P str) {
 
 #define Serialprintln( x ) \
         Serialprint( x ); \
-        Serialprint( "\n" );  /* FUTURE should we be \n\r? */
+        Serialprint( "\n" )  /* FUTURE should we be \n\r? */ \
+	delay( serialDelay );
 
 #define SerialprintNewline() \
 	Serial.println();
@@ -168,111 +174,18 @@ void SerialPrint_P(PGM_P str) {
 ////////////////////////////////////////
 // Not arduino
 #define Serialprint( x )     Serial.print( x )
-#define Serialprintln( x )   Serial.println( x )
-#define SerialprintNewline() Serial.println( "" )
+#define Serialprintln( x )   Serial.println( x ); \
+	delay( serialDelay )
+#define SerialprintNewline() Serialprintln( "" )
+
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// buffer is used for keyboard input, as well as string manipulation routines
-#define kBufLen (32)
-char buffer[kBufLen];
+#ifdef kIncludeMassStorage
 
-// PRINT_LINE for debugging
-#define PRINT_LINE( L ) \
-	{ \
-		for( char * tl = (L) ; *tl != '\n' && *tl != '\0' ; tl++ ) \
-			Serial.write( tl, 1 ); \
-		Serial.println( "" ); \
-	}
-
-////////////////////////////////////////////////////////////
-// Skip Number
-
-#define macroSKIP_NUMBER( A ) \
-	while(     (*A) >= '0' \
-		&& (*A) <= '9' \
-		&& (*A) != '\0' ) (A)++;
-
-void SkipNumber( char ** l )
-{
-	macroSKIP_NUMBER( *l );
-}
-#define SKIP_NUMBER( A ) \
-	SkipNumber( &A )
-
-
-////////////////////////////////////////////////////////////
-// Skip Whitespace
-
-#define macroSKIP_WHITESPACE( A ) \
-	while( (   (*A) == ' ' \
-		|| (*A) == '\t' \
-		|| (*A) == ',' \
-	        ) && (*A) != '\0' ) (A)++; /* parens here are IMPORTANT */
-
-void SkipWhitespace( char ** l )
-{
-	macroSKIP_WHITESPACE( *l );
-}
-
-#define SKIP_WHITESPACE( A ) \
-	SkipWhitespace( &A )
-
-////////////////////////////////////////////////////////////
-
-#define macroSKIP_UPPERCASE( x ) \
-	while(     (*x) >= 'A' \
-		&& (*x) <= 'Z' \
-		&& (*x) != '\0' ) (x)++;
-
-void SkipUppercase( char ** l )
-{
-	macroSKIP_UPPERCASE( *l );
-}
-
-#define SKIP_UPPERCASE( A ) \
-	SkipUppercase( &A )
-
-////////////////////////////////////////////////////////////
-
-int myAtoi( char * buf )
-{
-	int v = 0;
-	// find the integer starting at buf[0]
-	while( *buf <= '9' && *buf >= '0' && v<kBufLen  ) {
-		buffer[v++] = *buf;
-		buf++;
-	}
-	if( v == 0 ) {
-		// no number!
-		return -1;
-	}
-
-	buffer[v] = '\0';
-
-	// my atoi (save on library overhead)
-	v = 0;
-	buf = buffer;
-	while( *buf ) {
-		v *= 10;
-		v += (*buf)-'0';
-		buf++;
-	}
-	return v;
-}
-
-
-// same as the above, but it affects the line pointer
-int myAtoiP( char ** buf, int * next )
-{
-	if( *next == kJRSyntaxError ) return 0;
-	int v = myAtoi( *buf );
-	SKIP_NUMBER( *buf );
-	return v;
-}
-
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -294,8 +207,8 @@ void SetSerialDelay( void )
         if( ch & kFlagDelay8 ) serialDelay += 500;        
 }
 
-////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
 
 void cmd_mem( void )
 {
@@ -310,7 +223,6 @@ void cmd_mem( void )
 	Serialprint( " / " );
 	Serial.print( (long)kRamSize, DEC );
 	Serialprintln( " RAM" );
-	delay( serialDelay );
 
 	Serialprint( "   " );
 
@@ -335,7 +247,6 @@ void cmd_mem( void )
 	Serialprint( " / " );
 	Serial.print( (long)kEESize, DEC );
 	Serialprintln( " EEPROM" );
-	delay( serialDelay );
 }
 
 void cmd_help( void )
@@ -343,19 +254,15 @@ void cmd_help( void )
         SetSerialDelay();
         
 	Serialprintln( "BLuB " kBLuBVersion );
-	delay( serialDelay );
 	cmd_mem();
 
 #ifdef USE_MORE_PROGRAMSPACE
 	Serialprintln( "\nCommands:" );
-	delay( serialDelay );
 	//                   ------- ------- ------- ------- -------
 	Serialprintln( "    help    mem     vars    new     list" );
-	delay( serialDelay );
 	Serialprintln( "    run     tron    troff" );
-	delay( serialDelay );
 	Serialprintln( "    elist   eload   esave   enew" );
-	delay( serialDelay );
+	Serialprintln( "    mslist  msload  mssave  msnew" );
 	//                   ------- ------- ------- ------- -------
 #endif
 }
@@ -467,6 +374,162 @@ void cmd_esave( void )
 
 	Serial.print( (long)i, DEC );
 	Serialprintln( " bytes saved." );
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Mass storage (files on desktop, banks of SD on device)
+#ifdef kIncludeMassStorage
+
+void cmd_msnew( void )
+{
+	Serialprintln( "NEW." );
+}
+
+void cmd_mslist( void )
+{
+	Serialprintln( "BANKS:" );
+}
+
+void cmd_mssave( char * line )
+{
+	if( *line == '\0' ) {
+		Serialprintln( "MSSAVE: No bank!" );
+		return;
+	}
+
+	Serialprint( "SAVE TO BANK " );
+	int bank = atoi( line );
+
+	if( bank < 0 || bank > 255 ) {
+		Serialprintln( "MSSAVE: Bad bank!" );
+		return;
+	}
+
+	Serial.print( (long)bank, DEC );
+	SerialprintNewline();
+}
+
+void cmd_msload( char * line )
+{
+	if( *line == '\0' ) {
+		Serialprintln( "MSLOAD: No bank!" );
+		return;
+	}
+
+	Serialprint( "LOAD FROM BANK " );
+	int bank = atoi( line );
+
+	if( bank < 0 || bank > 255 ) {
+		Serialprintln( "MSLOAD: Bad bank!" );
+		return;
+	}
+
+	Serial.print( (long)bank, DEC );
+	SerialprintNewline();
+}
+
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+// buffer is used for keyboard input, as well as string manipulation routines
+#define kBufLen (32)
+char buffer[kBufLen];
+
+// PRINT_LINE for debugging
+#define PRINT_LINE( L ) \
+	{ \
+		for( char * tl = (L) ; *tl != '\n' && *tl != '\0' ; tl++ ) \
+			Serial.write( tl, 1 ); \
+		Serial.println( "" ); \
+	}
+
+////////////////////////////////////////////////////////////
+// Skip Number
+
+#define macroSKIP_NUMBER( A ) \
+	while(     (*A) >= '0' \
+		&& (*A) <= '9' \
+		&& (*A) != '\0' ) (A)++;
+
+void SkipNumber( char ** l )
+{
+	macroSKIP_NUMBER( *l );
+}
+#define SKIP_NUMBER( A ) \
+	SkipNumber( &A )
+
+
+////////////////////////////////////////////////////////////
+// Skip Whitespace
+
+#define macroSKIP_WHITESPACE( A ) \
+	while( (   (*A) == ' ' \
+		|| (*A) == '\t' \
+		|| (*A) == ',' \
+	        ) && (*A) != '\0' ) (A)++; /* parens here are IMPORTANT */
+
+void SkipWhitespace( char ** l )
+{
+	macroSKIP_WHITESPACE( *l );
+}
+
+#define SKIP_WHITESPACE( A ) \
+	SkipWhitespace( &A )
+
+////////////////////////////////////////////////////////////
+
+#define macroSKIP_UPPERCASE( x ) \
+	while(     (*x) >= 'A' \
+		&& (*x) <= 'Z' \
+		&& (*x) != '\0' ) (x)++;
+
+void SkipUppercase( char ** l )
+{
+	macroSKIP_UPPERCASE( *l );
+}
+
+#define SKIP_UPPERCASE( A ) \
+	SkipUppercase( &A )
+
+////////////////////////////////////////////////////////////
+
+int myAtoi( char * buf )
+{
+	int v = 0;
+	// find the integer starting at buf[0]
+	while( *buf <= '9' && *buf >= '0' && v<kBufLen  ) {
+		buffer[v++] = *buf;
+		buf++;
+	}
+	if( v == 0 ) {
+		// no number!
+		return -1;
+	}
+
+	buffer[v] = '\0';
+
+	// my atoi (save on library overhead)
+	v = 0;
+	buf = buffer;
+	while( *buf ) {
+		v *= 10;
+		v += (*buf)-'0';
+		buf++;
+	}
+	return v;
+}
+
+
+// same as the above, but it affects the line pointer
+int myAtoiP( char ** buf, int * next )
+{
+	if( *next == kJRSyntaxError ) return 0;
+	int v = myAtoi( *buf );
+	SKIP_NUMBER( *buf );
+	return v;
 }
 
 
@@ -1491,6 +1554,22 @@ void cmd_insertLine( char * theLine )
 char linebuf[kLineLen];
 char * bptr;
 
+int strMatches( char * haystack, const char * needle )
+{
+	if( !haystack || !needle ) return 0;
+
+	while( *haystack != '\0' && *needle != '\0' )
+	{
+		if( *haystack != *needle ) return 0;
+
+		haystack++;
+		needle++;
+	}
+
+	if( *needle == '\0' ) return 1;
+	return 0;
+}
+
 void loop()
 {
 	// print out something
@@ -1530,6 +1609,21 @@ void loop()
 	else if( !strcmp( bptr, "elist" )) { cmd_elist(); }
 	else if( !strcmp( bptr, "eload" )) { cmd_eload(); }
 	else if( !strcmp( bptr, "esave" )) { cmd_esave(); }
+
+#ifdef kIncludeMassStorage
+	else if( !strcmp( bptr, "msnew" )) { cmd_msnew(); }
+	else if( !strcmp( bptr, "mslist" )) { cmd_mslist(); }
+	else if( strMatches( bptr, "msload" )) { 
+		bptr+= 6;
+		SKIP_WHITESPACE( bptr );
+		cmd_msload( bptr );
+	}
+	else if( strMatches( bptr, "mssave" )) {
+		bptr+= 6;
+		SKIP_WHITESPACE( bptr );
+		cmd_mssave( bptr );
+	}
+#endif
 
 	else if( !strcmp( bptr, "tron" )) { 
 		Serial.println( "Trace on." );
