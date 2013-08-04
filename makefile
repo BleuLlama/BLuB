@@ -23,6 +23,7 @@ SRCSIM := ardsim/main.cpp \
 	  ardsim/eesim.cpp \
 	  ardsim/sersim.cpp \
 	  ardsim/miscsim.cpp \
+	  ardsim/mssim.cpp \
 	  ardsim/iosim.cpp 
 
 INCS += -Iardsim

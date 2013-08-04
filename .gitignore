@@ -17,6 +17,7 @@
 blub
 blub.exe
 eeprom.dat
+mass.dat
 
 *.swp
 :w

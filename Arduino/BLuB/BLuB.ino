@@ -12,7 +12,7 @@
 // v1.08  2013-Aug-01   Mass Storage beginnings
 //			delay() after newline streamlined into the macros
 //
-#undef kIncludeMassStorage
+#define kIncludeMassStorage
 
 // v1.07  2013-July-26  "clear" command
 //			variables 'e' and 'r' are preset with EE/RAM sizes
@@ -183,12 +183,6 @@ void SerialPrint_P(PGM_P str) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef kIncludeMassStorage
-
-#endif
-
-////////////////////////////////////////////////////////////////////////////////
-
 void SetSerialDelay( void )
 {
 	int ch;
@@ -205,6 +199,106 @@ void SetSerialDelay( void )
         if( ch & kFlagDelay2 ) serialDelay += 50;
         if( ch & kFlagDelay4 ) serialDelay += 250;
         if( ch & kFlagDelay8 ) serialDelay += 500;        
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+// buffer is used for keyboard input, as well as string manipulation routines
+#define kBufLen (32)
+char buffer[kBufLen];
+
+// PRINT_LINE for debugging
+#define PRINT_LINE( L ) \
+	{ \
+		for( char * tl = (L) ; *tl != '\n' && *tl != '\0' ; tl++ ) \
+			Serial.write( tl, 1 ); \
+		Serial.println( "" ); \
+	}
+
+////////////////////////////////////////////////////////////
+// Skip Number
+
+#define macroSKIP_NUMBER( A ) \
+	while(     (*A) >= '0' \
+		&& (*A) <= '9' \
+		&& (*A) != '\0' ) (A)++;
+
+void SkipNumber( char ** l )
+{
+	macroSKIP_NUMBER( *l );
+}
+#define SKIP_NUMBER( A ) \
+	SkipNumber( &A )
+
+
+////////////////////////////////////////////////////////////
+// Skip Whitespace
+
+#define macroSKIP_WHITESPACE( A ) \
+	while( (   (*A) == ' ' \
+		|| (*A) == '\t' \
+		|| (*A) == ',' \
+	        ) && (*A) != '\0' ) (A)++; /* parens here are IMPORTANT */
+
+void SkipWhitespace( char ** l )
+{
+	macroSKIP_WHITESPACE( *l );
+}
+
+#define SKIP_WHITESPACE( A ) \
+	SkipWhitespace( &A )
+
+////////////////////////////////////////////////////////////
+
+#define macroSKIP_UPPERCASE( x ) \
+	while(     (*x) >= 'A' \
+		&& (*x) <= 'Z' \
+		&& (*x) != '\0' ) (x)++;
+
+void SkipUppercase( char ** l )
+{
+	macroSKIP_UPPERCASE( *l );
+}
+
+#define SKIP_UPPERCASE( A ) \
+	SkipUppercase( &A )
+////////////////////////////////////////////////////////////
+
+int myAtoi( char * buf )
+{
+	int v = 0;
+	// find the integer starting at buf[0]
+	while( *buf <= '9' && *buf >= '0' && v<kBufLen  ) {
+		buffer[v++] = *buf;
+		buf++;
+	}
+	if( v == 0 ) {
+		// no number!
+		return -1;
+	}
+
+	buffer[v] = '\0';
+
+	// my atoi (save on library overhead)
+	v = 0;
+	buf = buffer;
+	while( *buf ) {
+		v *= 10;
+		v += (*buf)-'0';
+		buf++;
+	}
+	return v;
+}
+
+
+// same as the above, but it affects the line pointer
+int myAtoiP( char ** buf, int * next )
+{
+	if( *next == kJRSyntaxError ) return 0;
+	int v = myAtoi( *buf );
+	SKIP_NUMBER( *buf );
+	return v;
 }
 
 
@@ -262,7 +356,7 @@ void cmd_help( void )
 	Serialprintln( "    help    mem     vars    new     list" );
 	Serialprintln( "    run     tron    troff" );
 	Serialprintln( "    elist   eload   esave   enew" );
-	Serialprintln( "    mslist  msload  mssave  msnew" );
+	Serialprintln( "    msfiles msload  mssave  msnew" );
 	//                   ------- ------- ------- ------- -------
 #endif
 }
@@ -381,14 +475,65 @@ void cmd_esave( void )
 // Mass storage (files on desktop, banks of SD on device)
 #ifdef kIncludeMassStorage
 
+// ms format:
+//	bank 0: reserved
+//	bank 1..N: program slots:
+//		   just contain the program
+
+#ifdef DESKTOP
+#define kMSSize		(1024 * 1024 * 8) /* 8 meg mass size */
+#define kMSBlockSize	(512)
+#endif
+
+
 void cmd_msnew( void )
 {
 	Serialprintln( "NEW." );
+#ifdef DESKTOP
+	MASSSTORAGE.Open();
+	MASSSTORAGE.Format();
+	MASSSTORAGE.Close();
+#endif
 }
 
-void cmd_mslist( void )
+void cmd_msfiles( void )
 {
+	int done = 0;
+	int bank = 0;
+	int b = 0;
+	char ch;
 	Serialprintln( "BANKS:" );
+
+#ifdef DESKTOP
+	MASSSTORAGE.Open();
+	ch = MASSSTORAGE.read( 0, 0 ); /* bank, byte */
+	if( ch != 'B' ) {
+		Serialprintln( "Not formatted." );
+		MASSSTORAGE.Close();
+		return;
+	}
+	while( done == 0 && bank < 100 ) {
+		ch = MASSSTORAGE.read( bank, 0 );
+		if( ch == '\0' ) {
+			//Serialprint( "End." );
+			//done = 1;
+		} else {
+			Serial.print( (long)bank, DEC );
+			Serialprint( ": " );
+
+			b = 0;
+			ch = MASSSTORAGE.read( bank, b );
+			while( ch != '\0' && ch != '\n' ) {
+				Serial.write( ch );
+				b++;
+				ch = MASSSTORAGE.read( bank, b );
+			}
+			SerialprintNewline();
+		}
+		bank++;
+	}
+	MASSSTORAGE.Close();
+#endif
 }
 
 void cmd_mssave( char * line )
@@ -398,14 +543,25 @@ void cmd_mssave( char * line )
 		return;
 	}
 
-	Serialprint( "SAVE TO BANK " );
-	int bank = atoi( line );
+	int bank = myAtoi( line );
 
 	if( bank < 0 || bank > 255 ) {
 		Serialprintln( "MSSAVE: Bad bank!" );
 		return;
 	}
 
+
+	MASSSTORAGE.Open();
+	int pos = 0;
+	while( programRam[pos] != '\0' )
+	{
+		MASSSTORAGE.write( bank, pos, programRam[pos] );
+		pos++;
+	}
+	MASSSTORAGE.write( bank, pos, '\0' );
+	MASSSTORAGE.Close();
+
+	Serialprint( "SAVED TO " );
 	Serial.print( (long)bank, DEC );
 	SerialprintNewline();
 }
@@ -417,120 +573,20 @@ void cmd_msload( char * line )
 		return;
 	}
 
-	Serialprint( "LOAD FROM BANK " );
-	int bank = atoi( line );
+	int bank = myAtoi( line );
 
 	if( bank < 0 || bank > 255 ) {
 		Serialprintln( "MSLOAD: Bad bank!" );
 		return;
 	}
 
+	Serialprint( "LOADED FROM " );
 	Serial.print( (long)bank, DEC );
 	SerialprintNewline();
 }
 
 #endif
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-// buffer is used for keyboard input, as well as string manipulation routines
-#define kBufLen (32)
-char buffer[kBufLen];
-
-// PRINT_LINE for debugging
-#define PRINT_LINE( L ) \
-	{ \
-		for( char * tl = (L) ; *tl != '\n' && *tl != '\0' ; tl++ ) \
-			Serial.write( tl, 1 ); \
-		Serial.println( "" ); \
-	}
-
-////////////////////////////////////////////////////////////
-// Skip Number
-
-#define macroSKIP_NUMBER( A ) \
-	while(     (*A) >= '0' \
-		&& (*A) <= '9' \
-		&& (*A) != '\0' ) (A)++;
-
-void SkipNumber( char ** l )
-{
-	macroSKIP_NUMBER( *l );
-}
-#define SKIP_NUMBER( A ) \
-	SkipNumber( &A )
-
-
-////////////////////////////////////////////////////////////
-// Skip Whitespace
-
-#define macroSKIP_WHITESPACE( A ) \
-	while( (   (*A) == ' ' \
-		|| (*A) == '\t' \
-		|| (*A) == ',' \
-	        ) && (*A) != '\0' ) (A)++; /* parens here are IMPORTANT */
-
-void SkipWhitespace( char ** l )
-{
-	macroSKIP_WHITESPACE( *l );
-}
-
-#define SKIP_WHITESPACE( A ) \
-	SkipWhitespace( &A )
-
-////////////////////////////////////////////////////////////
-
-#define macroSKIP_UPPERCASE( x ) \
-	while(     (*x) >= 'A' \
-		&& (*x) <= 'Z' \
-		&& (*x) != '\0' ) (x)++;
-
-void SkipUppercase( char ** l )
-{
-	macroSKIP_UPPERCASE( *l );
-}
-
-#define SKIP_UPPERCASE( A ) \
-	SkipUppercase( &A )
-
-////////////////////////////////////////////////////////////
-
-int myAtoi( char * buf )
-{
-	int v = 0;
-	// find the integer starting at buf[0]
-	while( *buf <= '9' && *buf >= '0' && v<kBufLen  ) {
-		buffer[v++] = *buf;
-		buf++;
-	}
-	if( v == 0 ) {
-		// no number!
-		return -1;
-	}
-
-	buffer[v] = '\0';
-
-	// my atoi (save on library overhead)
-	v = 0;
-	buf = buffer;
-	while( *buf ) {
-		v *= 10;
-		v += (*buf)-'0';
-		buf++;
-	}
-	return v;
-}
-
-
-// same as the above, but it affects the line pointer
-int myAtoiP( char ** buf, int * next )
-{
-	if( *next == kJRSyntaxError ) return 0;
-	int v = myAtoi( *buf );
-	SKIP_NUMBER( *buf );
-	return v;
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1612,7 +1668,7 @@ void loop()
 
 #ifdef kIncludeMassStorage
 	else if( !strcmp( bptr, "msnew" )) { cmd_msnew(); }
-	else if( !strcmp( bptr, "mslist" )) { cmd_mslist(); }
+	else if( !strcmp( bptr, "msfiles" )) { cmd_msfiles(); }
 	else if( strMatches( bptr, "msload" )) { 
 		bptr+= 6;
 		SKIP_WHITESPACE( bptr );

@@ -15,6 +15,8 @@
 // Serial IO
 #include "sersim.h"
 
+// Mass Storage simulation
+#include "mssim.h"
 
 
 #ifndef FLASHEND
