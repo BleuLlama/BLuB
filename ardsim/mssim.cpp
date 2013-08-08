@@ -62,7 +62,7 @@ void ms_simulator::Load( void )
 	if( !fp ) {
 		// no EEPROM found, create one with all FFs
 		// (this is the initial state of EEPROM on device)
-		memset( this->memory, 0xff, this->sz );
+		memset( this->memory, 0x00, this->sz );
 		this->Save();
 		return;
 	}
@@ -80,6 +80,17 @@ void ms_simulator::Save( void )
 	if( !fp ) return;
 	fwrite(  this->memory, this->sz, 1, fp );
 	fclose( fp );
+}
+
+void ms_simulator::erase( long block )
+{
+	int addr;
+	int offset = block * kMSBlockSize;
+	if( block < 1 || block > 101 ) return;
+
+	for( addr = 0 ; addr < kMSBlockSize ; addr++ ) {
+		this->memory[ addr + offset ] = 0;
+	}
 }
 
 unsigned char ms_simulator::read( long block, long addr )

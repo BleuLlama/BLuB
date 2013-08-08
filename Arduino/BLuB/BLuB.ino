@@ -350,13 +350,13 @@ void cmd_help( void )
 	Serialprintln( "BLuB " kBLuBVersion );
 	cmd_mem();
 
-#ifdef USE_MORE_PROGRAMSPACE
+#ifdef DESKTOP
 	Serialprintln( "\nCommands:" );
 	//                   ------- ------- ------- ------- -------
 	Serialprintln( "    help    mem     vars    new     list" );
 	Serialprintln( "    run     tron    troff" );
 	Serialprintln( "    elist   eload   esave   enew" );
-	Serialprintln( "    msfiles msload  mssave  msnew" );
+	Serialprintln( "    msbanks msload  mssave  msnew" );
 	//                   ------- ------- ------- ------- -------
 #endif
 }
@@ -496,7 +496,7 @@ void cmd_msnew( void )
 #endif
 }
 
-void cmd_msfiles( void )
+void cmd_msbanks( void )
 {
 	int done = 0;
 	int bank = 0;
@@ -552,6 +552,7 @@ void cmd_mssave( char * line )
 
 
 	MASSSTORAGE.Open();
+	MASSSTORAGE.erase( bank );
 	int pos = 0;
 	while( programRam[pos] != '\0' )
 	{
@@ -579,6 +580,16 @@ void cmd_msload( char * line )
 		Serialprintln( "MSLOAD: Bad bank!" );
 		return;
 	}
+
+	MASSSTORAGE.Open();
+	int pos = 0;
+	programRam[pos] = MASSSTORAGE.read( bank, pos );
+	while( programRam[pos] != '\0' )
+	{
+		pos++;
+		programRam[pos] = MASSSTORAGE.read( bank, pos );
+	}
+	MASSSTORAGE.Close();
 
 	Serialprint( "LOADED FROM " );
 	Serial.print( (long)bank, DEC );
@@ -1668,7 +1679,7 @@ void loop()
 
 #ifdef kIncludeMassStorage
 	else if( !strcmp( bptr, "msnew" )) { cmd_msnew(); }
-	else if( !strcmp( bptr, "msfiles" )) { cmd_msfiles(); }
+	else if( !strcmp( bptr, "msbanks" )) { cmd_msbanks(); }
 	else if( strMatches( bptr, "msload" )) { 
 		bptr+= 6;
 		SKIP_WHITESPACE( bptr );

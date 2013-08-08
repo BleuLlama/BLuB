@@ -29,6 +29,8 @@ public:
 	void Load( void );
 	void Save( void );
 
+	void erase( long block );
+
 	unsigned char read( long block, long addr );
 	void write( long block, long addr, unsigned char value );
 };
