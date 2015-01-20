@@ -1,9 +1,12 @@
-BLuB
+BLuB / BLu Basic
 ====
 
 BLuB A small variant of a BASIC style language, simplifying the syntax and
 borrowing some concepts from ASM. "BLuB" originally stood for "BleuLlama's
-micro-BASIC", but now it is just "BLuB".
+micro-BASIC", but now it can also be shortened down to "BLuB" although 
+"BLu Basic" is alternately preferred.  (There are other things out there
+claiming to be a "BASIC" but are much further from Dartmouth Basic than
+BLuB is.)
 
 
 # Overview
